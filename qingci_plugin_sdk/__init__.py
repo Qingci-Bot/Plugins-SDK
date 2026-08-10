@@ -7,7 +7,7 @@
     uv pip install -e .    # 从 Plugins-Dev 目录
 """
 
-from .base import PluginBase
+from .base import PluginBase, PluginStatus
 from .context import MessageContext
 from .matcher import (
     Matcher,
@@ -51,6 +51,7 @@ from .rule import (
 __all__ = [
     # 基础
     "PluginBase",
+    "PluginStatus",
     "MessageContext",
     # Matcher
     "Matcher",

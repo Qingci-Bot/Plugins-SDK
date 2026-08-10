@@ -151,6 +151,7 @@ cp plugins/my_plugin.py ../Qingci-Bot/plugins/
 import logging
 from qingci_plugin_sdk import (
     PluginBase,
+    PluginStatus,       # 插件状态枚举
     MatcherContext,
     on_command,
     on_startswith,
@@ -284,7 +285,7 @@ Plugins-Dev/
 所有插件都必须继承 `PluginBase`，并实现 `on_load()` 和 `on_unload()` 两个方法。
 
 ```python
-from qingci_plugin_sdk import PluginBase
+from qingci_plugin_sdk import PluginBase, PluginStatus
 
 class MyPlugin(PluginBase):
     # ===== 必填 =====
@@ -294,7 +295,8 @@ class MyPlugin(PluginBase):
     version = "1.0.0"        # 版本号
     author = "YourName"       # 作者
     description = "我的插件"   # 简介
-    require = []              # 依赖的其他插件
+    category = "tool"         # 分类：chat / admin / tool / fun / 自定义
+    require = []              # 依赖的其他插件，支持 PEP 440 版本约束（如 "chat>=1.0,<2.0"）
 
     async def on_load(self):
         """插件加载时调用 —— 注册功能"""
@@ -303,13 +305,48 @@ class MyPlugin(PluginBase):
     async def on_unload(self):
         """插件卸载时调用 —— 清理资源"""
         pass
+
+    async def on_disable(self):
+        """插件被禁用时调用（可选）—— 停用定时任务等轻量清理"""
+        pass
+
+    async def on_enable(self):
+        """插件被启用时调用（可选）—— 恢复定时任务等"""
+        pass
 ```
 
-**`require` 依赖声明**：如果你的插件需要另一个插件先加载，填写它的 `name`。例如：
+**`require` 依赖声明**：如果你的插件需要另一个插件先加载，填写它的 `name`。支持 PEP 440 版本约束：
 
 ```python
-require = ["chat"]  # 依赖内置的 chat 插件
+require = ["chat"]              # 无版本约束
+require = ["chat>=1.0,<2.0"]    # 依赖 chat 1.x 版本
+require = ["admin>=1.1"]        # 依赖 admin 1.1 及以上
 ```
+
+**`category` 分类**：插件分类用于前端分类筛选和 `/help` 命令分组展示：
+
+| 分类 | 说明 |
+|------|------|
+| `chat` | 聊天对话类 |
+| `admin` | 管理控制类 |
+| `tool` | 工具类 |
+| `fun` | 娱乐类 |
+| 自定义 | 任意字符串 |
+
+**插件状态（PluginStatus）**：
+
+```python
+plugin.status        # PluginStatus.LOADED / DISABLED / ERROR 等
+plugin.enabled       # bool，向后兼容：LOADING/LOADED 为 True
+```
+
+| 状态 | 值 | 说明 |
+|------|------|------|
+| `LOADING` | `"loading"` | 正在加载 |
+| `LOADED` | `"loaded"` | 已加载，正常运行 |
+| `DISABLED` | `"disabled"` | 已禁用，跳过事件分发 |
+| `ERROR` | `"error"` | 加载/运行出错 |
+| `UNLOADING` | `"unloading"` | 正在卸载 |
 
 ### 匹配器 Matcher
 
@@ -475,6 +512,140 @@ async def handler(ctx: MatcherContext) -> str:
 | `self.scheduler` | APScheduler | 定时任务 | 未启用时 |
 | `self.tool_registry` | ToolRegistry | Function Calling | 未启用时 |
 | `self.knowledge_store` | KnowledgeStore | 知识库检索 | 未启用时 |
+| `self.session_state` | SessionStateManager | 会话状态（TTL 键值存储） | 不会 |
+
+### 会话状态（SessionState / TTL 键值存储）
+
+借鉴 NoneBot2 的 `session.state`，提供带过期时间的会话级临时键值存储，适用于多步骤对话、表单填写等场景。
+
+**在 handler 中通过 `ctx.session_state` 使用：**
+
+```python
+async def _handle_register(self, ctx: MatcherContext) -> str:
+    step = ctx.session_state.get("step", "start")
+
+    if step == "start":
+        ctx.session_state.set("step", "waiting_name", ttl=300)
+        return "请输入你的名字："
+
+    if step == "waiting_name":
+        ctx.session_state.set("name", ctx.plain_text, ttl=300)
+        ctx.session_state.set("step", "waiting_age", ttl=300)
+        return f"你好 {ctx.plain_text}，请输入你的年龄"
+
+    if step == "waiting_age":
+        name = ctx.session_state.get("name")
+        return f"注册完成！{name}，{ctx.plain_text}岁"
+```
+
+**会话键自动隔离：** 私聊按 `private:{user_id}`，群聊按 `group:{group_id}:{user_id}`，无需手动管理。
+
+**API 速查：**
+| 方法 | 说明 |
+|------|------|
+| `ctx.session_state.get(key, default)` | 获取值，过期自动删除 |
+| `ctx.session_state.set(key, value, ttl=0)` | 设置值，ttl=0 永不过期 |
+| `ctx.session_state.delete(key)` | 删除键 |
+| `ctx.session_state.clear()` | 清空当前会话 |
+
+### 依赖注入容器（DI Container）
+
+框架内置轻量级 DI 容器，按类型自动注入服务。插件只需声明类型注解：
+
+```python
+from qingci_plugin_sdk import PluginBase
+
+class MyPlugin(PluginBase):
+    name = "my_plugin"
+    # 声明类型注解后，框架自动注入
+    # db: Database
+    # llm: LLMManager
+    # session_state: SessionStateManager
+```
+
+### 插件级配置（plugin_config）
+
+插件可通过定义 `Config` 内嵌类声明配置项，框架自动从 `config.yaml` 加载：
+
+```python
+from pydantic import BaseModel
+from qingci_plugin_sdk import PluginBase
+
+class MyPlugin(PluginBase):
+    name = "my_plugin"
+
+    class Config(BaseModel):
+        greeting: str = "你好"
+        max_length: int = 100
+
+    async def on_load(self):
+        # self.plugin_config 已自动加载
+        greeting = self.plugin_config.greeting
+```
+
+对应 `config.yaml`：
+```yaml
+plugins:
+  my_plugin:
+    greeting: "Hello"
+    max_length: 200
+```
+
+### 插件导出/导入（export / require）
+
+插件间可暴露和调用服务接口：
+
+```python
+# 提供方
+class ChatPlugin(PluginBase):
+    name = "chat"
+    async def on_load(self):
+        self.export("get_history", self.get_history)
+
+# 消费方
+class MyPlugin(PluginBase):
+    name = "my_plugin"
+    require = ["chat"]
+    async def on_load(self):
+        chat = self.get_exports("chat")
+        history = await chat["get_history"](user_id=123)
+```
+
+> 注意：获取导出使用 `get_exports()` 方法，`require` 仅作为类属性声明依赖（两者原本重名，已拆分）。
+
+### 插件级中间件
+
+每个插件可注册 handler 前置/后置钩子：
+
+```python
+class MyPlugin(PluginBase):
+    name = "my_plugin"
+
+    async def on_load(self):
+        self.register_before(self._before)   # 前置钩子
+        self.register_after(self._after)     # 后置钩子
+
+    async def _before(self, matcher, ctx):
+        return None  # None = 不拦截
+
+    async def _after(self, matcher, ctx, result):
+        return result  # 可修改返回值
+```
+
+### 插件元数据发现（plugin.json）
+
+在插件目录下放置 `plugin.json`，无需导入模块即可发现插件元信息：
+
+```json
+{
+  "name": "my_plugin",
+  "version": "1.0.0",
+  "author": "YourName",
+  "description": "插件描述",
+  "category": "tool",
+  "require": ["chat>=1.0"]
+}
+```
 
 ---
 
@@ -486,6 +657,7 @@ async def handler(ctx: MatcherContext) -> str:
 from qingci_plugin_sdk import (
     # 基础
     PluginBase,
+    PluginStatus,
     MessageContext,
     MatcherContext,
 
