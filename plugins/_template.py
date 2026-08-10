@@ -4,7 +4,7 @@
 以 _ 开头的文件不会被自动加载，可放心保留此模板。
 
 ====== 快速上手 ======
-1. 安装 SDK: pip install -e .
+1. 安装 SDK: uv pip install -e .
 2. 复制此文件: cp plugins/_template.py plugins/my_plugin.py
 3. 修改类名和 name 属性
 4. 在 on_load 中注册 Matcher

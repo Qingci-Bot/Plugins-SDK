@@ -2,7 +2,7 @@
 
 使用方式:
     cd Plugins-Dev
-    pip install -e .
+    uv pip install -e .
     python -c "from qingci_plugin_sdk import PluginBase; print('SDK OK')"
 
 开发完成后，将 .py 文件复制到 Qingci-Bot/plugins/ 目录即可加载。

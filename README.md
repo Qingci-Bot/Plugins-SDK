@@ -8,7 +8,7 @@
 
 ```bash
 # 1. 安装 SDK
-pip install -e .
+uv pip install -e .
 
 # 2. 验证安装
 python -c "from qingci_plugin_sdk import PluginBase, on_command; print('OK')"

@@ -4,7 +4,7 @@
     from qingci_plugin_sdk import PluginBase, on_command, MatcherContext
 
 安装:
-    pip install -e .    # 从 Plugins-Dev 目录
+    uv pip install -e .    # 从 Plugins-Dev 目录
 """
 
 from .base import PluginBase
