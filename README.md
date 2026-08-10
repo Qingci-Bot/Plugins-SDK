@@ -2,6 +2,8 @@
 
 独立于主项目的插件开发环境，包含完整的 SDK 和模板。
 
+> 主项目：[Qingci-Bot](https://atomgit.com/luoqingci/Qingci-Bot) — 基于 Python 的 QQ 机器人框架
+
 ## 快速开始
 
 ```bash
