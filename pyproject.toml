@@ -1,0 +1,14 @@
+[project]
+name = "qingci-plugin-sdk"
+version = "0.9.0-rc"
+description = "Qingci-Bot 插件 SDK — 独立可安装的插件开发工具包"
+requires-python = ">=3.10"
+license = { text = "GPL-3.0-or-later" }
+dependencies = []
+
+[build-system]
+requires = ["setuptools>=75"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["."]
