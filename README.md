@@ -1,10 +1,12 @@
 # Qingci-Bot 插件开发工作区
 
+> 本项目底层核心代码由 **Zhou Zhe (aka luoqingci)** 原创，并授予 [Qingci-Bot](https://atomgit.com/Qingci-Bot) 组织持续开发。
+
 > 零基础也能看懂的插件开发指南。读完这篇文档，你就能写出自己的 QQ 机器人插件。
 
 独立于主项目的插件开发环境，包含完整的 SDK 和模板。你只需要一台电脑、一个代码编辑器，就可以开始开发插件。
 
-> 主项目：[Qingci-Bot](https://atomgit.com/luoqingci/Qingci-Bot) — 基于 Python 的 QQ 机器人框架
+> 主项目：[Qingci-Bot](https://atomgit.com/Qingci-Bot/Qingci-Bot-CE) — 基于 Python 的 QQ 机器人框架
 
 ---
 
@@ -237,7 +239,7 @@ class MyFirstPlugin(PluginBase):
 ## 项目结构
 
 ```
-Plugins-Dev/
+Plugins-SDK/
 ├── README.md                # 你现在看的文档
 ├── pyproject.toml           # 项目配置（包名、版本、依赖）
 ├── uv.lock                  # 依赖锁定文件
