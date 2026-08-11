@@ -1,7 +1,7 @@
 """Hello World 示例插件
 
 使用方式:
-    cd Plugins-Dev
+    cd Plugins-SDK
     uv pip install -e .
     python -c "from qingci_plugin_sdk import PluginBase; print('SDK OK')"
 
