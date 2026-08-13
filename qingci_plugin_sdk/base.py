@@ -157,7 +157,26 @@ class PluginBase(ABC):
             static_dir: 静态文件目录的绝对路径。可省略，框架自动探测
                         插件 __init__.py 同级的 web/ 目录。
         """
-        self._pages.append({"title": title, "icon": icon, "static_dir": static_dir})
+        import os
+        if not static_dir:
+            # 自动探测：插件类所在模块同级的 web/ 目录
+            module_file = getattr(type(self), "__module__", None)
+            if module_file:
+                import importlib
+                try:
+                    mod = importlib.import_module(module_file)
+                    mod_path = getattr(mod, "__file__", None)
+                    if mod_path:
+                        candidate = os.path.join(os.path.dirname(mod_path), "web")
+                        if os.path.isdir(candidate):
+                            static_dir = candidate
+                except Exception:
+                    pass
+        self._pages.append({
+            "title": title,
+            "icon": icon,
+            "static_dir": static_dir,
+        })
 
     # ---- 生命周期 ----
 

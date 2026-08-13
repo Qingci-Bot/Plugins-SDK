@@ -9,7 +9,7 @@
 import logging
 import re
 from dataclasses import dataclass, field, fields, replace
-from typing import Callable, Optional, TYPE_CHECKING, Union
+from typing import Any, Callable, Optional, TYPE_CHECKING, Union
 
 from .context import MessageContext
 from .permission import EVERYONE, Permission
@@ -31,6 +31,8 @@ class MatcherContext(MessageContext):
     command: str = ""
     args: str = ""
     match: Optional[re.Match] = None
+    # session_state 由主项目 Dispatcher 运行时注入（TTL 会话状态存储）
+    session_state: Optional[Any] = field(default=None, repr=False)
 
     @classmethod
     def from_message_context(
@@ -49,7 +51,7 @@ class MatcherContext(MessageContext):
         )
 
 
-@dataclass
+@dataclass(eq=False)
 class Matcher:
     """事件匹配器"""
 
