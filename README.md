@@ -25,6 +25,7 @@
   - [上下文 MatcherContext](#上下文-matchercontext)
   - [依赖注入](#依赖注入)
 - [完整 API 参考](#完整-api-参考)
+- [命令管理](#命令管理)
 - [常见场景](#常见场景)
   - [发送消息到 QQ](#发送消息到-qq)
   - [调用大模型](#调用大模型)
@@ -32,6 +33,7 @@
   - [Function Calling](#function-calling)
   - [一次性匹配器](#一次性匹配器)
   - [模块级装饰器](#模块级装饰器)
+  - [Web 管理页面](#web-管理页面register_page)
 - [发布插件](#发布插件)
 - [常见问题](#常见问题)
 - [许可](#许可)
@@ -104,15 +106,15 @@ python -c "from qingci_plugin_sdk import PluginBase, on_command; print('安装�
 
 ```bash
 # Windows
-copy plugins\_template.py plugins\my_plugin.py
+xcopy /E /I plugins\_template plugins\my_plugin
 
 # Mac / Linux
-cp plugins/_template.py plugins/my_plugin.py
+cp -r plugins/_template plugins/my_plugin
 ```
 
 ### 第七步：编辑你的插件
 
-用代码编辑器打开 `plugins/my_plugin.py`，找到这一段：
+用代码编辑器打开 `plugins/my_plugin/__init__.py`，找到这一段：
 
 ```python
 class TemplatePlugin(PluginBase):
@@ -126,10 +128,10 @@ class TemplatePlugin(PluginBase):
 
 ```bash
 # Windows
-copy plugins\my_plugin.py ..\Qingci-Bot\plugins\
+xcopy /E /I plugins\my_plugin ..\Qingci-Bot\plugins\my_plugin
 
 # Mac / Linux
-cp plugins/my_plugin.py ../Qingci-Bot/plugins/
+cp -r plugins/my_plugin ../Qingci-Bot/plugins/
 ```
 
 重启 Qingci-Bot，你的插件就会自动加载了！
@@ -144,9 +146,16 @@ cp plugins/my_plugin.py ../Qingci-Bot/plugins/
 2. 用户发「天气 北京」，机器人回复「查询北京的天气...」
 3. 用户发消息包含「帮助」，机器人回复帮助信息
 
-### 1. 创建插件文件
+### 1. 创建插件目录
 
-在 `plugins/` 目录下新建 `my_first_plugin.py`：
+在 `plugins/` 目录下新建文件夹 `my_first_plugin/`，在其中创建 `__init__.py`：
+
+```
+plugins/my_first_plugin/
+└── __init__.py    # 插件入口（必需）
+```
+
+把下面的代码写入 `__init__.py`：
 
 ```python
 """我的第一个插件"""
@@ -254,11 +263,13 @@ Plugins-SDK/
 │   ├── ratelimit.py         # RateLimiter 限流器
 │   └── context.py           # MessageContext 消息上下文
 └── plugins/                 # 你的插件源码都放在这里
-    ├── _template.py         # 完整开发模板（以 _ 开头，不会被加载）
-    └── hello.py             # 最小示例插件
+    ├── _template/           # 完整开发模板（以 _ 开头，不会被加载）
+    │   └── __init__.py
+    └── hello/               # 最小示例插件
+        └── __init__.py
 ```
 
-> **提示**：以 `_` 开头的 `.py` 文件不会被 Qingci-Bot 自动加载，所以 `_template.py` 放在这里很安全，不会影响运行。
+> **提示**：以 `_` 开头的目录不会被 Qingci-Bot 自动加载，所以 `_template/` 放在这里很安全，不会影响运行。
 
 ---
 
@@ -270,17 +281,50 @@ Plugins-SDK/
 
 | 项目 | 规范 | 正确示例 | 错误示例 |
 |------|------|---------|---------|
-| 文件名 | 小写英文 + 下划线，与 `name` 一致 | `chat.py`、`my_plugin.py` | `MyPlugin.py`、`_test.py`、`插件.py` |
+| 目录名 | 小写英文 + 下划线，与 `name` 一致 | `chat`、`my_plugin` | `MyPlugin`、`_test`、`插件` |
+| 入口文件 | 目录下的 `__init__.py` | `chat/__init__.py` | 其他模块名 |
 | 类名 | `{Name}Plugin` 帕斯卡命名 | `ChatPlugin`、`HelloPlugin` | `chat`、`my_plugin` |
 | `name` 属性 | 小写英文 + 下划线，唯一标识 | `"chat"`、`"my_plugin"` | `"MyPlugin"`、`"我的插件"` |
 
-**三条硬性规则（违反会报错）：**
+**四条硬性规则（违反会报错）：**
 
-1. **文件名不能以 `_` 开头** — `_template.py`、`__init__.py` 会被跳过，不会被加载
-2. **一个文件只能有一个插件类** — 每个 `.py` 文件最多定义 1 个 `PluginBase` 子类
+1. **目录名不能以 `_` 开头** — `_template/`、`__init__.py` 会被跳过，不会被加载
+2. **一个插件只能有一个插件类** — 每个 `__init__.py` 最多定义 1 个 `PluginBase` 子类
 3. **`name` 不能跟其他插件重名** — 每个插件的 `name` 是唯一标识
+4. **插件类必须直接定义在 `__init__.py` 中** — 不能从其他子模块 `import` 进来
 
-> **建议**：文件名和 `name` 保持一致，类名用 `{Name}Plugin` 格式。这样无论是读代码还是管理插件，一眼就能对得上。
+> **建议**：目录名和 `name` 保持一致，类名用 `{Name}Plugin` 格式。这样无论是读代码还是管理插件，一眼就能对得上。
+
+### 目录结构要求
+
+框架通过扫描 `plugins/` 目录识别插件。**目录型插件**（推荐）和**文件型插件**（兼容）的判断规则：
+
+| 形态 | 识别条件 | 入口 |
+|------|----------|------|
+| 目录型 | 目录内存在 `__init__.py` **或** `plugin.json` | `__init__.py`（必须含 `PluginBase` 子类） |
+| 文件型 | `plugins/<name>.py` | 文件本身 |
+
+**同名优先**：若 `plugins/chat/` 和 `plugins/chat.py` 同时存在，目录型优先，文件型被忽略。
+
+**目录型插件结构：**
+
+```
+plugins/my_plugin/          # 目录名 = 插件名（不能以 _ 或 . 开头）
+├── __init__.py              # 必需：插件入口，含 PluginBase 子类
+├── plugin.json              # 可选：元数据（替代类属性 name/version/author 等）
+├── utils.py                 # 可选：插件内部模块
+└── web/                     # 可选：Web 管理页面静态文件
+    ├── index.html           # 入口页面（register_page 自动加载）
+    ├── style.css
+    └── app.js
+```
+
+**硬性要求：**
+- 目录名不能以 `_` 或 `.` 开头，否则跳过加载
+- `__init__.py` 必须存在，且其中定义**恰好 1 个** `PluginBase` 子类
+- 插件类必须直接定义在 `__init__.py` 中，不能从子模块 `import` 导入
+- 若 `__init__.py` 不存在但 `plugin.json` 存在，目录被识别为插件但加载会失败（缺少入口）
+- 其他 `.py` 文件（如 `utils.py`）可自由存放，不会被解析为独立插件
 
 ### 插件基类 PluginBase
 
@@ -387,6 +431,7 @@ async def on_load(self):
 | `priority` | `int` | `1` | 优先级，越小越先执行 |
 | `block` | `bool` | `True` | 匹配后是否阻止后续匹配器 |
 | `temp` | `bool` | `False` | 是否一次性（触发后自动移除） |
+| `disabled` | `bool` | `False` | 是否被用户手动禁用（不参与调度，见「命令管理」） |
 | `description` | `str` | `""` | 功能描述（显示在 `/help` 中） |
 
 **priority 优先级**：
@@ -649,6 +694,40 @@ class MyPlugin(PluginBase):
 }
 ```
 
+### Web 管理页面（register_page）
+
+插件可注册自带的 Web 管理页面，入口自动显示在「插件管理」页面的插件卡片上，点击后右侧滑出抽屉 iframe 加载。
+
+```python
+class MyPlugin(PluginBase):
+    name = "my_plugin"
+
+    async def on_load(self):
+        # 注册管理页面（static_dir 可选，默认自动探测插件目录下的 web/ 子目录）
+        self.register_page("群排行", icon="📊", static_dir="/path/to/web/dist")
+        self.register_page("成员管理", icon="👤")
+```
+
+**参数说明：**
+| 参数 | 类型 | 说明 |
+|------|------|------|
+| `title` | `str` | 页面标题，显示在按钮上 |
+| `icon` | `str` | 图标字符，可选，默认 `◇` |
+| `static_dir` | `str` | 静态文件目录的绝对路径，可选。省略时自动探测插件 `__init__.py` 同级的 `web/` 目录 |
+
+**推荐目录结构：**
+```
+plugins/my_plugin/
+├── __init__.py
+├── plugin.json
+└── web/               # ← register_page 自动探测此目录
+    ├── index.html      # 入口页面
+    ├── style.css
+    └── app.js
+```
+
+**静态文件挂载：** 框架自动将 `web/` 目录挂载到 `/api/plugin-data/{plugin_name}/`，前端通过 iframe 加载。插件页面需预构建为纯静态 HTML/CSS/JS，不依赖框架前端构建链。
+
 ---
 
 ## 完整 API 参考
@@ -730,6 +809,31 @@ from qingci_plugin_sdk import (
 | `MEMBER` | 常量 | 普通群员 |
 | `USER(ids)` | 函数 | 指定用户 |
 | `GROUP_MEMBER(ids)` | 函数 | 指定群成员 |
+
+---
+
+## 命令管理
+
+多个插件可能注册同名命令（如两个插件都注册 `/help`），调度时优先级高的胜出，其余被静默覆盖。框架提供命令管理能力，可在 WebUI 中查看冲突、禁用单条命令或调整优先级。
+
+**命令冲突检测：**
+
+插件管理页 →「命令管理」Tab 列出所有已注册命令。冲突命令行红色高亮 + ⚠ 标记，一目了然。
+
+**禁用单条命令：**
+
+点击「禁用」按钮，该命令不再参与调度，但插件其余功能不受影响。相当于在不卸载插件的前提下关闭某个命令。SDK 中对应 `Matcher.disabled = True` 字段。
+
+**调整优先级：**
+
+直接修改表格中的优先级数字，回车生效。优先级越小越先执行，范围为 0–100。
+
+**API 端点：**
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | `/api/command/conflicts` | 列出所有命令及冲突信息 |
+| PUT | `/api/command/{owner}/{command}` | 更新命令状态（`disabled` / `priority`） |
 
 ---
 
@@ -880,14 +984,14 @@ async def status_handler(ctx: MatcherContext) -> str:
 
 ## 发布插件
 
-开发完成后，把 `.py` 文件复制到 Qingci-Bot 的 `plugins/` 目录即可：
+开发完成后，把插件目录复制到 Qingci-Bot 的 `plugins/` 目录即可：
 
 ```bash
 # Windows
-copy plugins\my_plugin.py ..\Qingci-Bot\plugins\
+xcopy /E /I plugins\my_plugin ..\Qingci-Bot\plugins\my_plugin
 
 # Mac / Linux
-cp plugins/my_plugin.py ../Qingci-Bot/plugins/
+cp -r plugins/my_plugin ../Qingci-Bot/plugins/
 ```
 
 重启 Bot 或通过 Web UI 插件管理页热重载，插件就会生效。
@@ -902,7 +1006,7 @@ A: 需要重启 Bot 或在 Web UI 的「插件管理」页点击「重载」。�
 
 ### Q: 插件加载报错 "PluginBase subclass not found"？
 
-A: 检查你的类名是否和文件名一致（不是必须，但建议），以及是否继承了 `PluginBase`。
+A: 检查你的类名是否和目录名一致（不是必须，但建议），以及是否继承了 `PluginBase`，且插件类直接定义在 `__init__.py` 中。
 
 ### Q: `self.scheduler` 或 `self.tool_registry` 是 None？
 
@@ -916,9 +1020,9 @@ A: 在代码里加 `logger.info(...)` 打印日志，然后在 Qingci-Bot 的 We
 
 A: 可以，但要确保主项目的 Python 环境里也安装了该库。建议尽量使用 SDK 提供的能力，减少外部依赖。
 
-### Q: 模板文件 `_template.py` 会被加载吗？
+### Q: 模板目录 `_template/` 会被加载吗？
 
-A: 不会。以 `_` 开头的文件会被自动跳过。你可以放心保留它作为参考。
+A: 不会。以 `_` 开头的目录会被自动跳过。你可以放心保留它作为参考。
 
 ### Q: 多个插件能同时响应同一条消息吗？
 

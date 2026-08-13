@@ -5,7 +5,7 @@
     uv pip install -e .
     python -c "from qingci_plugin_sdk import PluginBase; print('SDK OK')"
 
-开发完成后，将 .py 文件复制到 Qingci-Bot/plugins/ 目录即可加载。
+开发完成后，将 hello/ 目录复制到 Qingci-Bot/plugins/ 即可加载。
 """
 
 from qingci_plugin_sdk import PluginBase, on_command, MatcherContext

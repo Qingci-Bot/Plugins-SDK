@@ -59,6 +59,7 @@ class Matcher:
     priority: int = 1
     block: bool = True
     temp: bool = False
+    disabled: bool = False  # 用户手动禁用：不参与调度，但保留在插件中
     owner: str = ""
     event_type: str = "message"
     meta: dict = field(default_factory=dict)

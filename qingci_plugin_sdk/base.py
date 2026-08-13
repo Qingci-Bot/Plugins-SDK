@@ -76,6 +76,9 @@ class PluginBase(ABC):
     # 导出注册表（插件间服务接口）
     _exports: dict[str, Any]
 
+    # Web 管理页面注册
+    _pages: list[dict[str, str]]
+
     # 中间件链（per-handler 钩子）
     # before_handler: async (matcher, ctx) -> Optional[str]
     #   - 返回非 None 时拦截，跳过 handler 并将返回值作为回复
@@ -86,6 +89,7 @@ class PluginBase(ABC):
 
     def __init__(self):
         self._exports = {}
+        self._pages = []
         self._before_handlers = []
         self._after_handlers = []
         self._status = PluginStatus.LOADING
@@ -141,6 +145,19 @@ class PluginBase(ABC):
         """注册 handler 后置钩子：async (matcher, ctx, result) -> Optional[str]"""
         if fn not in self._after_handlers:
             self._after_handlers.append(fn)
+
+    def register_page(self, title: str, icon: str = "◇", static_dir: str = "") -> None:
+        """注册插件 Web 管理页面
+
+        在 on_load 中调用，入口自动显示在插件管理页的插件卡片上。
+
+        Args:
+            title: 页面标题，显示在按钮上
+            icon: 图标字符，默认 ◇
+            static_dir: 静态文件目录的绝对路径。可省略，框架自动探测
+                        插件 __init__.py 同级的 web/ 目录。
+        """
+        self._pages.append({"title": title, "icon": icon, "static_dir": static_dir})
 
     # ---- 生命周期 ----
 
