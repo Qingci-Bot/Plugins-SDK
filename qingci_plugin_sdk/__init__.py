@@ -9,6 +9,8 @@
 
 from .base import PluginBase, PluginStatus
 from .context import MessageContext
+from .i18n import I18n
+from .llm_tool import LlmToolSpec, llm_tool
 from .matcher import (
     Matcher,
     MatcherContext,
@@ -41,6 +43,7 @@ from .rule import (
     contains,
     regex,
     command,
+    subcommand,
     to_me,
     is_private,
     is_group,
@@ -53,6 +56,11 @@ __all__ = [
     "PluginBase",
     "PluginStatus",
     "MessageContext",
+    # i18n
+    "I18n",
+    # LLM 工具
+    "LlmToolSpec",
+    "llm_tool",
     # Matcher
     "Matcher",
     "MatcherContext",
@@ -82,6 +90,7 @@ __all__ = [
     "contains",
     "regex",
     "command",
+    "subcommand",
     "to_me",
     "is_private",
     "is_group",

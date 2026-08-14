@@ -154,6 +154,33 @@ def command(cmd: Union[str, tuple[str, ...]]) -> Rule:
     return Rule(_check)
 
 
+def subcommand(parent: str, sub: str) -> Rule:
+    """子指令匹配
+
+    需与 command(parent) 组合使用（AND）。匹配形式 "parent sub [args]"。
+    匹配后：
+    - ctx.subcommand: 子指令名
+    - ctx.command:   "parent sub"
+    - ctx.args:      子指令后的剩余参数（已 strip）
+    """
+
+    def _check(bot, event, ctx):
+        args = getattr(ctx, "args", "")
+        if args == sub:
+            ctx.subcommand = sub
+            ctx.command = f"{ctx.command} {sub}".strip()
+            ctx.args = ""
+            return True
+        if args.startswith(sub + " "):
+            ctx.subcommand = sub
+            ctx.command = f"{ctx.command} {sub}".strip()
+            ctx.args = args[len(sub):].strip()
+            return True
+        return False
+
+    return Rule(_check)
+
+
 def to_me() -> Rule:
     """@ 机器人或私聊"""
     def _check(bot, event, ctx):

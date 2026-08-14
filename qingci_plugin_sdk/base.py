@@ -2,6 +2,7 @@
 
 import enum
 from abc import ABC, abstractmethod
+from pathlib import Path
 from typing import Any, Optional, TYPE_CHECKING
 
 from .context import MessageContext
@@ -66,6 +67,7 @@ class PluginBase(ABC):
     tool_registry: Optional[Any] = None
     knowledge_store: Optional[Any] = None
     session_state: Optional[Any] = None  # TTL 会话状态存储
+    event_bus: Optional[Any] = None  # 跨插件事件总线（发布-订阅）
 
     # Matcher 列表
     matchers: Optional[list["Matcher"]] = None
@@ -93,6 +95,26 @@ class PluginBase(ABC):
         self._before_handlers = []
         self._after_handlers = []
         self._status = PluginStatus.LOADING
+        # 国际化：插件可声明 i18n/<locale>.json 翻译资源，self._ = self.i18n.t
+        from .i18n import I18n
+
+        self.i18n = I18n("zh-CN")
+        self._ = self.i18n.t
+
+    # ---- 数据目录 ----
+
+    @property
+    def data_dir(self) -> Path:
+        """插件专属数据目录（自动创建，建议用于持久化文件数据）
+
+        路径约定：app_root()/data/plugins/<name>/，卸载不删除，
+        供插件存储运行时数据（缓存、导出文件等）。
+        """
+        from .paths import app_root
+
+        d = app_root() / "data" / "plugins" / self.name
+        d.mkdir(parents=True, exist_ok=True)
+        return d
 
     # ---- 状态 ----
 
@@ -209,3 +231,33 @@ class PluginBase(ABC):
     async def on_enable(self):
         """插件被启用时调用（可选覆写，用于恢复定时任务等）"""
         pass
+
+    # ---- 全局生命周期钩子（可选覆写，默认空实现） ----
+
+    async def on_startup(self):
+        """Bot 启动完成后调用（所有插件加载完毕、连接就绪后）
+
+        用于连接数据库、注册后台任务等耗时初始化。异常隔离，不影响启动。
+        """
+        return None
+
+    async def on_shutdown(self):
+        """Bot 停止时调用（在插件 on_unload 之前）
+
+        用于释放 on_startup 中申请的资源。异常隔离。
+        """
+        return None
+
+    async def on_bot_connect(self):
+        """有 QQ 会话（LLBot）连接到反向 WebSocket 时调用
+
+        初始连接与重连均触发，用于初始化会话相关资源。
+        """
+        return None
+
+    async def on_metaevent(self, event: dict) -> Optional[bool]:
+        """处理元事件（生命周期，如 heartbeat / connect / enable）
+
+        返回 True 表示已消费该事件（与 on_request 的审批语义对齐）。
+        """
+        return None

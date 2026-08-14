@@ -58,6 +58,7 @@ from qingci_plugin_sdk import (
     USER,
     Rule,
     command,
+    subcommand,
     startswith,
     keyword,
     regex,
@@ -65,6 +66,7 @@ from qingci_plugin_sdk import (
     is_private,
     is_group,
     rate_limit,
+    llm_tool,
 )
 
 logger = logging.getLogger("qingci-bot.plugin.template")
@@ -78,7 +80,7 @@ class TemplatePlugin(PluginBase):
 
     # ========== 插件元信息（必填 name，其余可选）==========
     name = "template"
-    version = "1.0.0"
+    version = "1.4.0"
     author = "YourName"
     description = "插件开发模板（演示所有功能）"
 
@@ -150,7 +152,21 @@ class TemplatePlugin(PluginBase):
             )(self._on_friend_request)
         )
 
-        # ─── 7. 一次性 Matcher（temp=True）───────────────────────
+        # ─── 7. 子指令 + 类型化参数（1.4.0）────────────────────
+        # /user ban Alice 路由到子指令 handler；/user info 走父指令
+        async def _cmd_ban(ctx: MatcherContext) -> str:
+            return f"已封禁 {ctx.args or '未知用户'}"
+
+        self.matchers.append(
+            on_command(
+                "user",
+                description="用户管理",
+                subcommands={"ban": _cmd_ban},
+                args_schema={"action": str, "target": str},
+            )(self._cmd_user)
+        )
+
+        # ─── 8. 一次性 Matcher（temp=True）───────────────────────
         # 执行一次后自动移除，适合"下一条消息"场景
         self.matchers.append(
             on_message(
@@ -161,7 +177,7 @@ class TemplatePlugin(PluginBase):
             )(self._cmd_next_message)
         )
 
-        # ─── 8. 定时任务（需 self.scheduler 可用）────────────────
+        # ─── 9. 定时任务（需 self.scheduler 可用）────────────────
         if self.scheduler is not None:
             # 每小时执行
             self.scheduler.add_job(
@@ -181,7 +197,7 @@ class TemplatePlugin(PluginBase):
                 minute=0,
             )
 
-        # ─── 9. 注册 Function Calling 工具（需 self.tool_registry 可用）─
+        # ─── 10. 注册 Function Calling 工具（需 self.tool_registry 可用）─
         if self.tool_registry is not None:
             self.tool_registry.register(
                 name="get_time",
@@ -209,6 +225,30 @@ class TemplatePlugin(PluginBase):
 
         logger.info(f"[{self.name}] 插件已卸载")
 
+    # ========== 全局生命周期钩子（可选覆写，1.4.0）==========
+
+    async def on_startup(self):
+        """Bot 启动完成后调用（所有插件加载完毕、连接就绪后）"""
+        logger.info(f"[{self.name}] 数据目录: {self.data_dir}")
+
+    async def on_shutdown(self):
+        """Bot 停止时调用（在 on_unload 之前），用于释放 on_startup 申请的资源"""
+        pass
+
+    async def on_bot_connect(self):
+        """QQ 会话连接/重连时调用"""
+        pass
+
+    async def on_metaevent(self, event: dict):
+        """处理元事件（heartbeat/connect/enable 等），返回 True 表示已消费"""
+        return None
+
+    # ========== 模块级 LLM 工具（@llm_tool，1.4.0）==========
+
+    @llm_tool(name="get_time", description="获取当前时间")
+    async def get_time(self) -> str:
+        return datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S")
+
     # ========== 命令处理器 ==========
 
     async def _cmd_ping(self, ctx: MatcherContext) -> str:
@@ -230,6 +270,10 @@ class TemplatePlugin(PluginBase):
         # 通过 self.llm 调用大模型
         # 通过 self.db 访问数据库
         return "管理员命令已执行"
+
+    async def _cmd_user(self, ctx: MatcherContext) -> str:
+        """子指令父指令：/user info 走这里，/user ban x 走子指令 handler"""
+        return f"用户状态: {ctx.args or 'unknown'}"
 
     async def _cmd_next_message(self, ctx: MatcherContext) -> str:
         """一次性匹配器：触发后自动移除"""
