@@ -1,5 +1,31 @@
 # Qingci-Bot 插件开发环境
+# 运行时产物与缓存一律不提交，详见 docs/PROJECT_STRUCTURE.md 产物归属约定
+
+# Python 缓存
 __pycache__/
 *.pyc
+*.pyo
+
+# 虚拟环境
 .venv/
+venv/
+env/
+
+# 安装元数据
 *.egg-info/
+build/
+dist/
+
+# 运行时数据（插件 data_dir 等）
+data/
+
+# 静态检查 / 测试缓存
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 系统文件
+.DS_Store
+Thumbs.db

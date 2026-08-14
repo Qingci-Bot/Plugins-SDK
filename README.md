@@ -8,6 +8,11 @@
 
 > 主项目：[Qingci-Bot-CE](https://atomgit.com/Qingci-Bot/Qingci-Bot-CE) — 基于 Python 的 QQ 机器人框架
 
+**相关文档：**
+- [项目结构规范](docs/PROJECT_STRUCTURE.md) — 目录职责与产物归属
+- [编码规范](docs/CODING_STANDARDS.md) — SDK 代码组织与约定
+- [变更记录](CHANGELOG.md) — 版本历史
+
 ---
 
 ## 目录
@@ -25,6 +30,12 @@
   - [上下文 MatcherContext](#上下文-matchercontext)
   - [依赖注入](#依赖注入)
 - [完整 API 参考](#完整-api-参考)
+  - [从 SDK 导入](#从-sdk-导入)
+  - [指令系统增强](#指令系统增强140)
+  - [全局生命周期钩子](#全局生命周期钩子140)
+  - [国际化 i18n](#国际化-i18n140)
+  - [LLM 工具声明](#llm-工具声明140)
+  - [插件数据目录](#插件数据目录140)
 - [命令管理](#命令管理)
 - [常见场景](#常见场景)
   - [发送消息到 QQ](#发送消息到-qq)
@@ -770,6 +781,7 @@ from qingci_plugin_sdk import (
     contains,
     regex,
     command,
+    subcommand,
     to_me,
     is_private,
     is_group,
@@ -778,8 +790,82 @@ from qingci_plugin_sdk import (
 
     # 限流
     RateLimiter,
+
+    # i18n 国际化
+    I18n,
+
+    # LLM 工具声明
+    llm_tool,
+    LlmToolSpec,
 )
 ```
+
+#### 指令系统增强（1.4.0）
+
+`on_command` 现支持别名、子指令与类型化参数：
+
+```python
+# 别名：/help /帮助 /h 都触发
+on_command("help", aliases=("帮助", "h"))(handler)
+
+# 子指令：/admin ban user 路由到 ban_handler
+on_command("admin", subcommands={
+    "ban": ban_handler,
+    "unban": unban_handler,
+})(admin_handler)
+
+# 类型化参数：/weather Beijing 3 -> city="Beijing", days=3（注入 handler 形参）
+on_command("weather", args_schema={"city": str, "days": int})
+async def weather(ctx, city: str = "", days: int = 1) -> str:
+    return f"{city}: {days} 天预报"
+```
+
+#### 全局生命周期钩子（1.4.0）
+
+插件可覆写以下钩子参与 Bot 生命周期（默认空实现）：
+
+```python
+class MyPlugin(PluginBase):
+    async def on_startup(self):        # 启动完成（所有插件加载后）
+        ...
+    async def on_shutdown(self):       # 停止时（on_unload 之前）
+        ...
+    async def on_bot_connect(self):    # QQ 会话连接/重连
+        ...
+    async def on_metaevent(self, event: dict) -> bool | None:  # 元事件，返回 True 表示已消费
+        ...
+```
+
+#### 国际化 i18n（1.4.0）
+
+插件基类自动注入 `self.i18n` 与 `self._ = self.i18n.t`。翻译文件约定
+`<插件模块同级>/i18n/<locale>.json`：
+
+```json
+{ "hello": "你好，{name}" }
+```
+
+```python
+self._("hello", name="世界")   # -> "你好，世界"
+```
+
+#### LLM 工具声明（1.4.0）
+
+用 `@llm_tool` 装饰器把函数暴露为 LLM 可调用的工具（模块级或类方法均可，
+PluginManager 加载时自动收集）：
+
+```python
+from qingci_plugin_sdk import llm_tool
+
+@llm_tool(name="get_time", description="获取当前时间")
+async def get_time() -> str:
+    return "2026-08-14 12:00:00"
+```
+
+#### 插件数据目录（1.4.0）
+
+`self.data_dir` 返回插件专属数据目录（`app_root()/data/plugins/<name>/`，
+自动创建，卸载不删除），用于持久化缓存、导出文件等。
 
 ### 所有内置规则速查
 
@@ -792,6 +878,7 @@ from qingci_plugin_sdk import (
 | `keyword` | `(*kws: str)` | 消息包含关键词（词边界） |
 | `regex` | `(pattern, flags=0)` | 正则匹配 |
 | `command` | `(cmd: str \| tuple)` | 命令匹配 |
+| `subcommand` | `(parent: str, sub: str)` | 子指令匹配 |
 | `to_me` | `()` | @ 机器人或私聊 |
 | `is_private` | `()` | 私聊 |
 | `is_group` | `()` | 群聊 |
