@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- `paths.set_data_root()` / `paths.data_root()`：可写数据根目录的运行时覆盖钩子。宿主应用（Qingci-Bot）加载 SDK 式插件时通过 `set_data_root()` 将插件数据目录重定向到实例可写数据根，保证实例隔离；`base.PluginBase.data_dir` 改走 `data_root()/plugins/<name>/`（默认行为不变，仍为 `app_root()/data`）。
+
 ### Changed
 
 - 权限判定改用 `bot.config.bot.admin_set` 预编译集合（`super_admin` + `admin_users` 并集，O(1) 成员判断），`rule` 限流豁免同步受益；无 `admin_set` 属性的旧配置对象回退到列表判断，保持兼容
