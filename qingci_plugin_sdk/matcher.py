@@ -100,6 +100,7 @@ def on_message(
     priority: int = 1,
     block: bool = True,
     temp: bool = False,
+    description: str = "",
 ) -> Callable:
     """注册消息匹配器（装饰器工厂）"""
     def decorator(func: Callable) -> Matcher:
@@ -112,6 +113,7 @@ def on_message(
             temp=temp,
             event_type="message",
         )
+        m.meta["description"] = description
         _collect_module_matcher(m)
         return m
     return decorator

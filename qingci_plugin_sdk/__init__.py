@@ -33,6 +33,7 @@ from .permission import (
     MEMBER,
     USER,
     GROUP_MEMBER,
+    describe_permission,
 )
 from .ratelimit import RateLimiter
 from .rule import (
@@ -82,6 +83,7 @@ __all__ = [
     "MEMBER",
     "USER",
     "GROUP_MEMBER",
+    "describe_permission",
     # Rule
     "Rule",
     "startswith",

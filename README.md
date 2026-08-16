@@ -137,12 +137,14 @@ class TemplatePlugin(PluginBase):
 
 ### 第八步：放到主项目里运行
 
+把插件复制到主项目 **Qingci-Bot-CE** 的插件目录（源码运行时为 `Qingci-Bot-CE/plugins/`；实例模式下为 `Qingci-Bot-CE/instances/<name>/plugins/`，下例以 `default` 实例为例）：
+
 ```bash
 # Windows
-xcopy /E /I plugins\my_plugin ..\Qingci-Bot\plugins\my_plugin
+xcopy /E /I plugins\my_plugin ..\Qingci-Bot-CE\instances\default\plugins\my_plugin
 
 # Mac / Linux
-cp -r plugins/my_plugin ../Qingci-Bot/plugins/
+cp -r plugins/my_plugin ../Qingci-Bot-CE/instances/default/plugins/
 ```
 
 重启 Qingci-Bot，你的插件就会自动加载了！
@@ -268,11 +270,14 @@ Plugins-SDK/
 ├── qingci_plugin_sdk/       # 插件 SDK（零外部依赖，纯 Python）
 │   ├── __init__.py          # 统一导出所有 API
 │   ├── base.py              # PluginBase 插件基类
+│   ├── context.py           # MessageContext 消息上下文
 │   ├── matcher.py           # Matcher 匹配器 + 工厂函数
 │   ├── rule.py              # Rule 规则系统 + 内置规则
 │   ├── permission.py        # Permission 权限系统 + 内置权限
 │   ├── ratelimit.py         # RateLimiter 限流器
-│   └── context.py           # MessageContext 消息上下文
+│   ├── i18n.py              # I18n 国际化翻译器
+│   ├── llm_tool.py          # @llm_tool 插件级 LLM 工具声明
+│   └── paths.py             # app_root 路径解析（供 data_dir 使用）
 └── plugins/                 # 你的插件源码都放在这里
     ├── _template/           # 完整开发模板（以 _ 开头，不会被加载）
     │   └── __init__.py
@@ -438,12 +443,13 @@ async def on_load(self):
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `rule` | `Rule` | `None` | 额外的匹配规则 |
-| `permission` | `Permission` | `EVERYONE` | 权限要求 |
+| `permission` | `Permission` | `EVERYONE` | 权限要求（`on_notice`/`on_request` 不支持） |
 | `priority` | `int` | `1` | 优先级，越小越先执行 |
 | `block` | `bool` | `True` | 匹配后是否阻止后续匹配器 |
 | `temp` | `bool` | `False` | 是否一次性（触发后自动移除） |
-| `disabled` | `bool` | `False` | 是否被用户手动禁用（不参与调度，见「命令管理」） |
-| `description` | `str` | `""` | 功能描述（显示在 `/help` 中） |
+| `description` | `str` | `""` | 功能描述（显示在 `/help` 中；`on_notice`/`on_request` 不支持） |
+
+> `disabled` 不是工厂参数，而是 `Matcher` 字段（见 [命令管理](#命令管理)），通过 WebUI 禁用单条命令时设置。
 
 **priority 优先级**：
 
@@ -519,6 +525,8 @@ permission = SUPERUSER | USER(123456789)
 # 指定用户123456在私聊中
 permission = USER(123456) & PRIVATE
 ```
+
+**权限标签（label）：** 每个 `Permission` 带英文标识标签用于展示。内置权限的 label 为其枚举名（`SUPERUSER`/`ADMIN`/`EVERYONE` 等），组合权限自动生成组合标签（如 `(SUPERUSER & PRIVATE)`）。用 `describe_permission(perm)` 获取任意权限的标签；未标注的自定义权限返回 `CUSTOM`。主项目 Web 命令管理界面再将标签映射为中文（超级管理员/管理员/所有人等）。
 
 ### 上下文 MatcherContext
 
@@ -772,6 +780,7 @@ from qingci_plugin_sdk import (
     MEMBER,
     USER,
     GROUP_MEMBER,
+    describe_permission,
 
     # 规则
     Rule,
@@ -914,6 +923,10 @@ async def get_time() -> str:
 **调整优先级：**
 
 直接修改表格中的优先级数字，回车生效。优先级越小越先执行，范围为 0–100。
+
+**权限等级显示：**
+
+「命令管理」表格新增权限列，展示每条命令对应的权限等级（如「超级管理员」「管理员」「所有人」等）。`Permission` 的 `label` 为英文标识（`EVERYONE`/`SUPERUSER`/`ADMIN`/`PRIVATE`/`GROUP`/`MEMBER`/`USER`/`GROUP_MEMBER`），组合运算（`&`/`|`/`~`）自动生成组合标签（如 `(SUPERUSER & PRIVATE)`），未标注的自定义权限经 `describe_permission()` 返回 `CUSTOM`；主项目 Web 表格将其映射为中文（超级管理员/管理员/所有人/自定义等）。SDK 提供 `describe_permission(perm) -> str` 返回权限标签，供主项目命令管理界面展示。
 
 **API 端点：**
 
@@ -1071,14 +1084,14 @@ async def status_handler(ctx: MatcherContext) -> str:
 
 ## 发布插件
 
-开发完成后，把插件目录复制到 Qingci-Bot 的 `plugins/` 目录即可：
+开发完成后，把插件目录复制到主项目 **Qingci-Bot-CE** 的插件目录即可（源码运行时为 `Qingci-Bot-CE/plugins/`；实例模式下为 `Qingci-Bot-CE/instances/<name>/plugins/`，下例以 `default` 实例为例）：
 
 ```bash
 # Windows
-xcopy /E /I plugins\my_plugin ..\Qingci-Bot\plugins\my_plugin
+xcopy /E /I plugins\my_plugin ..\Qingci-Bot-CE\instances\default\plugins\my_plugin
 
 # Mac / Linux
-cp -r plugins/my_plugin ../Qingci-Bot/plugins/
+cp -r plugins/my_plugin ../Qingci-Bot-CE/instances/default/plugins/
 ```
 
 重启 Bot 或通过 Web UI 插件管理页热重载，插件就会生效。
