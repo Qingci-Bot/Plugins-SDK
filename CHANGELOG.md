@@ -12,6 +12,9 @@
 
 ### Changed
 
+- 类型标注全面对齐 PEP 604：`Optional[X]`/`Union[X,Y]` 改为 `X | None`/`X | Y`（`matcher.py` 引入 `from __future__ import annotations` 支持 forward-ref 联合）
+- 弃用：`PluginBase` 旧式回调 `on_message`/`on_notice`/`on_request` 标注 deprecated，新插件请改用 Matcher
+- 质量：`pyproject.toml` 新增 ruff/mypy 配置（与主项目一致），存量 lint/type 问题清零
 - 权限判定改用 `bot.config.bot.admin_set` 预编译集合（`super_admin` + `admin_users` 并集，O(1) 成员判断），`rule` 限流豁免同步受益；无 `admin_set` 属性的旧配置对象回退到列表判断，保持兼容
 
 ## [1.5.1] - 2026-08-16
