@@ -52,6 +52,8 @@ from qingci_plugin_sdk import (
     PRIVATE,
     SUPERUSER,
     USER,
+    FriendRequestEvent,
+    GroupIncreaseNotice,
     MatcherContext,
     Permission,
     PluginBase,
@@ -310,25 +312,21 @@ class TemplatePlugin(PluginBase):
 
     # ========== 通知/请求处理器 ==========
 
-    async def _on_group_notice(self, ctx: MatcherContext) -> str:
-        """群通知事件处理"""
-        event = ctx.raw_event or {}
-        notice_type = event.get("notice_type", "")
-
-        if notice_type == "group_increase":
-            user_id = event.get("user_id", "未知")
-            return f"欢迎新成员 {user_id} 加入群聊！"
+    async def _on_group_notice(
+        self, ctx: MatcherContext, event: GroupIncreaseNotice
+    ) -> str:
+        """群通知事件处理（类型化事件注入）"""
+        if event.notice_type == "group_increase":
+            return f"欢迎新成员 {event.user_id} 加入群聊！"
 
         return None  # 不处理的事件返回 None
 
-    async def _on_friend_request(self, ctx: MatcherContext) -> str:
-        """加好友请求处理"""
-        event = ctx.raw_event or {}
-        user_id = event.get("user_id", "未知")
-        comment = event.get("comment", "")
-
-        logger.info(f"收到好友请求: user_id={user_id}, comment={comment}")
-        return "已自动同意好友请求"  # 返回非 None 即同意
+    async def _on_friend_request(
+        self, ctx: MatcherContext, event: FriendRequestEvent
+    ) -> bool:
+        """加好友请求处理（类型化事件注入，返回 bool 审批）"""
+        logger.info(f"收到好友请求: user_id={event.user_id}, comment={event.comment}")
+        return True  # True 同意 / False 拒绝
 
     # ========== 定时任务 ==========
 

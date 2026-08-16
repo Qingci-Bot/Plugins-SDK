@@ -44,6 +44,9 @@ class MatcherContext(MessageContext):
     session_state: Any | None = field(default=None, repr=False)
     # 会话阶梯对象（由主项目 Dispatcher 运行时注入；多轮交互控制句柄）
     session: Session | None = field(default=None, repr=False)
+    # 类型化事件对象（notice/request 事件由 Dispatcher 解析注入；
+    # NoticeEvent/RequestEvent 子类，消息事件为 None）
+    event: Any | None = field(default=None, repr=False)
 
     @classmethod
     def from_message_context(

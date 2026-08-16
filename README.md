@@ -27,6 +27,7 @@
   - [命名规范](#命名规范)
   - [插件基类 PluginBase](#插件基类-pluginbase)
   - [匹配器 Matcher](#匹配器-matcher)
+  - [类型化事件（notice/request）](#类型化事件noticerequest)
   - [规则 Rule](#规则-rule)
   - [权限 Permission](#权限-permission)
   - [上下文 MatcherContext](#上下文-matchercontext)
@@ -274,6 +275,7 @@ Plugins-SDK/
 │   ├── __init__.py          # 统一导出所有 API
 │   ├── base.py              # PluginBase 插件基类（旧式 on_message/on_notice/on_request 已弃用）
 │   ├── context.py           # MessageContext 消息上下文（主项目 dispatcher 转发同一类型）
+│   ├── events.py            # 类型化事件（notice/request 事件模型 + 解析工厂）
 │   ├── matcher.py           # Matcher 匹配器 + 工厂函数
 │   ├── rule.py              # Rule 规则系统 + 内置规则
 │   ├── permission.py        # Permission 权限系统 + 内置权限
@@ -457,6 +459,52 @@ async def on_load(self):
 | `description` | `str` | `""` | 功能描述（显示在 `/help` 中；`on_notice`/`on_request` 不支持） |
 
 > `disabled` 不是工厂参数，而是 `Matcher` 字段（见 [命令管理](#命令管理)），通过 WebUI 禁用单条命令时设置。
+
+### 类型化事件（notice/request）
+
+`on_notice` / `on_request` handler 可通过参数注解注入**类型化事件对象**，字段带类型、有 IDE 补全，无需再手撕 dict：
+
+```python
+from qingci_plugin_sdk import (
+    GroupIncreaseNotice,   # 群成员增加
+    GroupBanNotice,        # 群禁言
+    GroupRequestEvent,     # 加群请求
+    FriendRequestEvent,    # 加好友请求
+)
+
+@on_notice()
+async def on_group_increase(ctx: MatcherContext, event: GroupIncreaseNotice) -> str:
+    return f"欢迎 {event.user_id}（由 {event.operator_id} 操作）入群 {event.group_id}"
+
+@on_request()
+async def on_group_request(ctx: MatcherContext, event: GroupRequestEvent) -> bool:
+    # 返回 bool 表示审批结果（True 同意 / False 拒绝）
+    return event.sub_type == "add"
+```
+
+**内置事件模型：**
+
+| 事件 | 模型 | 关键字段 |
+|------|------|----------|
+| 群成员增加 | `GroupIncreaseNotice` | `operator_id` |
+| 群成员减少 | `GroupDecreaseNotice` | `operator_id` |
+| 群禁言 | `GroupBanNotice` | `operator_id`, `duration` |
+| 群管理员变动 | `GroupAdminNotice` | - |
+| 群消息撤回 | `GroupRecallNotice` | `operator_id`, `message_id` |
+| 好友消息撤回 | `FriendRecallNotice` | `message_id` |
+| 好友添加 | `FriendAddNotice` | - |
+| 群文件上传 | `GroupUploadNotice` | `file` |
+| 戳一戳 | `PokeNotice` | `target_id` |
+| 加群请求 | `GroupRequestEvent` | `group_id`, `comment`, `flag` |
+| 加好友请求 | `FriendRequestEvent` | `comment`, `flag` |
+
+**特性：**
+- 未知 `notice_type` 回退通用基类 `NoticeEvent`/`RequestEvent`（通用字段仍类型化）
+- 数值字段安全转换（字符串 `"123"` 自动转 int，非法值回退默认，不抛异常）
+- 原始事件保留在 `event.raw_event`（dict），旧用法 `ctx.raw_event` 不受影响
+- 手动解析：`parse_notice_event(raw)` / `parse_request_event(raw)` / `parse_event(post_type, raw)`
+
+> 类型化事件用 dataclass 实现，零依赖；与 pydantic 相比不做运行时强校验，但字段类型与补全体验一致。
 
 **priority 优先级**：
 

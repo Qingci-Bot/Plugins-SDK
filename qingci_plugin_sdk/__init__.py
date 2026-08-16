@@ -9,6 +9,24 @@
 
 from .base import PluginBase, PluginStatus
 from .context import MessageContext
+from .events import (
+    FriendAddNotice,
+    FriendRecallNotice,
+    FriendRequestEvent,
+    GroupAdminNotice,
+    GroupBanNotice,
+    GroupDecreaseNotice,
+    GroupIncreaseNotice,
+    GroupRecallNotice,
+    GroupRequestEvent,
+    GroupUploadNotice,
+    NoticeEvent,
+    PokeNotice,
+    RequestEvent,
+    parse_event,
+    parse_notice_event,
+    parse_request_event,
+)
 from .i18n import I18n
 from .llm_tool import LlmToolSpec, llm_tool
 from .matcher import (
@@ -60,6 +78,23 @@ __all__ = [
     "MessageContext",
     # i18n
     "I18n",
+    # 类型化事件
+    "NoticeEvent",
+    "GroupIncreaseNotice",
+    "GroupDecreaseNotice",
+    "GroupBanNotice",
+    "GroupAdminNotice",
+    "GroupRecallNotice",
+    "FriendRecallNotice",
+    "FriendAddNotice",
+    "GroupUploadNotice",
+    "PokeNotice",
+    "RequestEvent",
+    "FriendRequestEvent",
+    "GroupRequestEvent",
+    "parse_event",
+    "parse_notice_event",
+    "parse_request_event",
     # LLM 工具
     "LlmToolSpec",
     "llm_tool",
