@@ -1,0 +1,7 @@
+refactor: 类型标注对齐 PEP 604 并补齐质量配置
+
+- 全部 Optional[X]/Union[X,Y] 改为 X | None / X | Y（py3.10+）
+- matcher.py 加 from __future__ import annotations（forward-ref 联合）
+- base.py get_exports 修复 mypy attr-defined / no-any-return
+- 旧式 on_message/on_notice/on_request 标记 deprecated，引导用 Matcher
+- pyproject 新增 ruff/mypy 配置（与主项目一致），存量 lint/type 问题清零

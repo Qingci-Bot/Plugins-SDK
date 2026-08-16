@@ -16,16 +16,16 @@ class MessageContext:
 
     # 基础信息
     post_type: str = ""
-    message_type: str = ""          # group / private
-    sub_type: str = ""              # normal / anonymous / notice
+    message_type: str = ""  # group / private
+    sub_type: str = ""  # normal / anonymous / notice
     message_id: str = ""
     user_id: int = 0
     group_id: int = 0
-    self_id: int = 0                # Bot 自己的 QQ 号
+    self_id: int = 0  # Bot 自己的 QQ 号
 
     # 消息内容
-    raw_message: str = ""           # CQ 码原始文本
-    plain_text: str = ""            # 纯文本
+    raw_message: str = ""  # CQ 码原始文本
+    plain_text: str = ""  # 纯文本
     at_list: list[int] = field(default_factory=list)
     is_at_bot: bool = False
     images: list[str] = field(default_factory=list)
@@ -39,4 +39,4 @@ class MessageContext:
     @property
     def sender_name(self) -> str:
         """发送者昵称"""
-        return self.sender.get("nickname", "") or self.sender.get("card", "")
+        return str(self.sender.get("nickname", "") or self.sender.get("card", ""))

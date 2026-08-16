@@ -18,7 +18,6 @@ bot.i18n.I18n 行为一致）。
 import json
 import logging
 from pathlib import Path
-from typing import Optional
 
 logger = logging.getLogger("qingci-bot.i18n")
 
@@ -26,7 +25,7 @@ logger = logging.getLogger("qingci-bot.i18n")
 class I18n:
     """轻量翻译器"""
 
-    def __init__(self, locale: str = "zh-CN", translations: Optional[dict] = None):
+    def __init__(self, locale: str = "zh-CN", translations: dict | None = None):
         self._locale = locale
         self._data: dict[str, str] = dict(translations or {})
 
@@ -55,7 +54,7 @@ class I18n:
     def __call__(self, key: str, **kwargs) -> str:
         return self.t(key, **kwargs)
 
-    def load_dir(self, directory, locale: Optional[str] = None) -> bool:
+    def load_dir(self, directory, locale: str | None = None) -> bool:
         """从目录加载 i18n/<locale>.json（locale 为空用当前 locale）。
 
         Returns:

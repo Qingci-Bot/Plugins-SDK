@@ -1,11 +1,11 @@
-"""权限系统 — 插件 SDK 独立版本
+﻿"""权限系统 — 插件 SDK 独立版本
 
 支持权限组合（AND/OR/NOT），内置常用权限。
 权限检查基于 event + ctx，返回 bool。
 """
 
 import logging
-from typing import Callable, Union
+from collections.abc import Callable
 
 from .context import MessageContext
 
@@ -15,7 +15,7 @@ logger = logging.getLogger("qingci-bot.permission")
 class Permission:
     """权限对象，支持 & | ~ 组合"""
 
-    def __init__(self, checker: Callable = None, label: str = ""):
+    def __init__(self, checker: Callable | None = None, label: str = ""):
         self._checkers: list[Callable] = []
         self._label = label
         if checker is not None:
@@ -134,13 +134,13 @@ MEMBER = Permission(lambda bot, event, ctx: True, label="MEMBER")
 """普通群员（与 EVERYONE 等价但独立实例）"""
 
 
-def USER(user_ids: Union[int, list[int]]) -> Permission:
+def USER(user_ids: int | list[int]) -> Permission:
     """指定用户可用"""
     ids = [user_ids] if isinstance(user_ids, int) else list(user_ids)
     return Permission(lambda bot, event, ctx: ctx.user_id in ids, label=f"USER({ids})")
 
 
-def GROUP_MEMBER(group_ids: Union[int, list[int]]) -> Permission:
+def GROUP_MEMBER(group_ids: int | list[int]) -> Permission:
     """指定群的成员可用（仅群聊消息生效）
 
     参数为群号列表；私聊消息一律不匹配。

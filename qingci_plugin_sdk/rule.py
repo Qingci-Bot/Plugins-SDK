@@ -1,11 +1,11 @@
-"""规则系统 — 插件 SDK 独立版本
+﻿"""规则系统 — 插件 SDK 独立版本
 
 支持规则组合（AND/OR/NOT），内置常用规则。
 """
 
 import logging
 import re
-from typing import Callable, Union
+from collections.abc import Callable
 
 from .context import MessageContext
 
@@ -15,7 +15,7 @@ logger = logging.getLogger("qingci-bot.rule")
 class Rule:
     """规则对象，支持 & | ~ 组合"""
 
-    def __init__(self, checker: Callable = None):
+    def __init__(self, checker: Callable | None = None):
         self._checkers: list[Callable] = []
         if checker is not None:
             self._checkers.append(checker)
@@ -83,7 +83,8 @@ class Rule:
 
 # ============ 内置规则工厂 ============
 
-def startswith(prefix: Union[str, tuple[str, ...]]) -> Rule:
+
+def startswith(prefix: str | tuple[str, ...]) -> Rule:
     """前缀匹配，匹配后自动去除前缀写入 ctx.args"""
     prefixes = (prefix,) if isinstance(prefix, str) else tuple(prefix)
 
@@ -91,20 +92,20 @@ def startswith(prefix: Union[str, tuple[str, ...]]) -> Rule:
         text = ctx.plain_text
         for p in prefixes:
             if text.startswith(p):
-                ctx.args = text[len(p):].strip()
+                ctx.args = text[len(p) :].strip()
                 return True
         return False
 
     return Rule(_check)
 
 
-def endswith(suffix: Union[str, tuple[str, ...]]) -> Rule:
+def endswith(suffix: str | tuple[str, ...]) -> Rule:
     """后缀匹配"""
     suffixes = (suffix,) if isinstance(suffix, str) else tuple(suffix)
     return Rule(lambda bot, event, ctx: any(ctx.plain_text.endswith(s) for s in suffixes))
 
 
-def fullmatch(text: Union[str, tuple[str, ...]]) -> Rule:
+def fullmatch(text: str | tuple[str, ...]) -> Rule:
     """完全匹配"""
     texts = (text,) if isinstance(text, str) else tuple(text)
     return Rule(lambda bot, event, ctx: ctx.plain_text in texts)
@@ -115,7 +116,7 @@ def contains(keyword: str) -> Rule:
     return Rule(lambda bot, event, ctx: keyword in ctx.plain_text)
 
 
-def regex(pattern: Union[str, re.Pattern], flags: int = 0) -> Rule:
+def regex(pattern: str | re.Pattern, flags: int = 0) -> Rule:
     """正则匹配，匹配后将 Match 对象存入 ctx.match"""
     compiled = re.compile(pattern, flags) if isinstance(pattern, str) else pattern
 
@@ -129,7 +130,7 @@ def regex(pattern: Union[str, re.Pattern], flags: int = 0) -> Rule:
     return Rule(_check)
 
 
-def command(cmd: Union[str, tuple[str, ...]]) -> Rule:
+def command(cmd: str | tuple[str, ...]) -> Rule:
     """命令匹配，支持别名。匹配后 ctx.command 为命令名，ctx.args 为参数"""
     commands = (cmd,) if isinstance(cmd, str) else tuple(cmd)
 
@@ -147,7 +148,7 @@ def command(cmd: Union[str, tuple[str, ...]]) -> Rule:
                 return True
             if text_for_match.startswith(c + " "):
                 ctx.command = c
-                ctx.args = text_for_match[len(c):].strip()
+                ctx.args = text_for_match[len(c) :].strip()
                 return True
         return False
 
@@ -174,7 +175,7 @@ def subcommand(parent: str, sub: str) -> Rule:
         if args.startswith(sub + " "):
             ctx.subcommand = sub
             ctx.command = f"{ctx.command} {sub}".strip()
-            ctx.args = args[len(sub):].strip()
+            ctx.args = args[len(sub) :].strip()
             return True
         return False
 
@@ -183,8 +184,10 @@ def subcommand(parent: str, sub: str) -> Rule:
 
 def to_me() -> Rule:
     """@ 机器人或私聊"""
+
     def _check(bot, event, ctx):
         return ctx.is_at_bot or ctx.message_type == "private"
+
     return Rule(_check)
 
 

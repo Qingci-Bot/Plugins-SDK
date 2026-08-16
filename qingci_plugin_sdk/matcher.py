@@ -1,4 +1,4 @@
-"""匹配器系统 — 插件 SDK 独立版本
+﻿"""匹配器系统 — 插件 SDK 独立版本
 
 核心概念：
 - Matcher: 绑定 handler + rule + permission + priority 的匹配单元
@@ -6,11 +6,14 @@
 - 工厂函数: on_message / on_command / on_startswith / on_keyword / on_notice / on_request
 """
 
+from __future__ import annotations
+
 import logging
 import re
 import threading
+from collections.abc import Callable
 from dataclasses import dataclass, field, fields, replace
-from typing import Any, Callable, Optional, TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Any
 
 from .context import MessageContext
 from .permission import EVERYONE, Permission
@@ -26,27 +29,27 @@ logger = logging.getLogger("qingci-bot.matcher")
 class MatcherContext(MessageContext):
     """匹配器上下文 — 增强版 MessageContext"""
 
-    bot: Optional[object] = None       # Bot 实例引用（运行时注入）
-    plugin: Optional["PluginBase"] = None
-    matcher: Optional["Matcher"] = None
+    bot: object | None = None  # Bot 实例引用（运行时注入）
+    plugin: PluginBase | None = None
+    matcher: Matcher | None = None
     command: str = ""
     args: str = ""
-    match: Optional[re.Match] = None
+    match: re.Match | None = None
     # 子指令名（subcommand 规则写入，如 "admin ban" 中的 "ban"）
     subcommand: str = ""
     # args_schema 类型化解析后的命令参数字典（handler 按名注入）
     parsed_args: dict = field(default_factory=dict)
     # session_state 由主项目 Dispatcher 运行时注入（TTL 会话状态存储）
-    session_state: Optional[Any] = field(default=None, repr=False)
+    session_state: Any | None = field(default=None, repr=False)
 
     @classmethod
     def from_message_context(
         cls,
         ctx: MessageContext,
-        bot: Optional[object] = None,
-        plugin: Optional["PluginBase"] = None,
-        matcher: Optional["Matcher"] = None,
-    ) -> "MatcherContext":
+        bot: object | None = None,
+        plugin: PluginBase | None = None,
+        matcher: Matcher | None = None,
+    ) -> MatcherContext:
         base_changes = {f.name: getattr(ctx, f.name) for f in fields(MessageContext)}
         return replace(
             cls(**base_changes),
@@ -74,6 +77,7 @@ class Matcher:
 
 # ============ 工厂函数 ============
 
+
 def _create_matcher(
     handler: Callable,
     rule: Rule,
@@ -95,14 +99,15 @@ def _create_matcher(
 
 
 def on_message(
-    rule: Rule = None,
-    permission: Permission = None,
+    rule: Rule | None = None,
+    permission: Permission | None = None,
     priority: int = 1,
     block: bool = True,
     temp: bool = False,
     description: str = "",
 ) -> Callable:
     """注册消息匹配器（装饰器工厂）"""
+
     def decorator(func: Callable) -> Matcher:
         m = _create_matcher(
             handler=func,
@@ -116,20 +121,21 @@ def on_message(
         m.meta["description"] = description
         _collect_module_matcher(m)
         return m
+
     return decorator
 
 
 def on_command(
-    cmd: Union[str, tuple[str, ...]],
-    rule: Rule = None,
-    permission: Permission = None,
+    cmd: str | tuple[str, ...],
+    rule: Rule | None = None,
+    permission: Permission | None = None,
     priority: int = 1,
     block: bool = True,
     temp: bool = False,
     description: str = "",
     aliases: tuple[str, ...] = (),
-    subcommands: Optional[dict] = None,
-    args_schema: Optional[dict] = None,
+    subcommands: dict | None = None,
+    args_schema: dict | None = None,
 ) -> Callable:
     """注册命令匹配器（支持别名 / 子指令 / 类型化参数）
 
@@ -211,9 +217,9 @@ def on_command(
 
 
 def on_startswith(
-    prefix: Union[str, tuple[str, ...]],
-    rule: Rule = None,
-    permission: Permission = None,
+    prefix: str | tuple[str, ...],
+    rule: Rule | None = None,
+    permission: Permission | None = None,
     priority: int = 1,
     block: bool = True,
     temp: bool = False,
@@ -221,6 +227,7 @@ def on_startswith(
 ) -> Callable:
     """注册前缀匹配器"""
     from .rule import startswith as _startswith
+
     combined_rule = _startswith(prefix)
     if rule:
         combined_rule = combined_rule & rule
@@ -238,13 +245,14 @@ def on_startswith(
         m.meta["description"] = description
         _collect_module_matcher(m)
         return m
+
     return decorator
 
 
 def on_keyword(
-    keywords: Union[str, tuple[str, ...]],
-    rule: Rule = None,
-    permission: Permission = None,
+    keywords: str | tuple[str, ...],
+    rule: Rule | None = None,
+    permission: Permission | None = None,
     priority: int = 1,
     block: bool = True,
     temp: bool = False,
@@ -252,6 +260,7 @@ def on_keyword(
 ) -> Callable:
     """注册关键词匹配器"""
     from .rule import keyword as _keyword
+
     kws = (keywords,) if isinstance(keywords, str) else keywords
     combined_rule = _keyword(*kws)
     if rule:
@@ -270,16 +279,18 @@ def on_keyword(
         m.meta["description"] = description
         _collect_module_matcher(m)
         return m
+
     return decorator
 
 
 def on_notice(
-    rule: Rule = None,
+    rule: Rule | None = None,
     priority: int = 1,
     block: bool = True,
     temp: bool = False,
 ) -> Callable:
     """注册通知事件匹配器"""
+
     def decorator(func: Callable) -> Matcher:
         m = _create_matcher(
             handler=func,
@@ -292,16 +303,18 @@ def on_notice(
         )
         _collect_module_matcher(m)
         return m
+
     return decorator
 
 
 def on_request(
-    rule: Rule = None,
+    rule: Rule | None = None,
     priority: int = 1,
     block: bool = True,
     temp: bool = False,
 ) -> Callable:
     """注册请求事件匹配器"""
+
     def decorator(func: Callable) -> Matcher:
         m = _create_matcher(
             handler=func,
@@ -314,6 +327,7 @@ def on_request(
         )
         _collect_module_matcher(m)
         return m
+
     return decorator
 
 
@@ -322,7 +336,7 @@ def on_request(
 # 模块级 Matcher 收集栈：插件加载时设置，收集到的 matcher 关联到当前插件。
 # 用线程锁保护全局收集器，防御未来在 begin/end 之间引入 await 时两个并发
 # 加载（如 API 触发的 reload）交错污染全局变量。
-_matcher_collector: Optional[list] = None
+_matcher_collector: list | None = None
 _collector_lock = threading.Lock()
 
 

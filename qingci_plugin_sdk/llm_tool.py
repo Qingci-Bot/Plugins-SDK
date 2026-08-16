@@ -32,7 +32,7 @@
 
 import threading
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
@@ -46,14 +46,14 @@ class LlmToolSpec:
 
 
 # 模块级工具收集栈：插件加载时设置，收集到的工具关联到当前插件
-_tool_collector: Optional[list[LlmToolSpec]] = None
+_tool_collector: list[LlmToolSpec] | None = None
 _tool_lock = threading.Lock()
 
 
 def llm_tool(
-    name: Optional[str] = None,
+    name: str | None = None,
     description: str = "",
-    parameters: Optional[dict] = None,
+    parameters: dict | None = None,
 ):
     """声明插件级 LLM 工具（装饰器工厂）
 

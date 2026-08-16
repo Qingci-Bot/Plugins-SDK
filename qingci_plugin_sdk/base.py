@@ -3,7 +3,7 @@
 import enum
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Any, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, cast
 
 from .context import MessageContext
 
@@ -13,18 +13,19 @@ if TYPE_CHECKING:
 
 class PluginStatus(str, enum.Enum):
     """插件状态枚举"""
-    LOADING = "loading"       # 正在加载（on_load 执行中）
-    LOADED = "loaded"         # 已加载，正常运行
-    DISABLED = "disabled"     # 已禁用，跳过事件分发
-    ERROR = "error"           # 加载/运行出错
-    UNLOADING = "unloading"   # 正在卸载（on_unload 执行中）
+
+    LOADING = "loading"  # 正在加载（on_load 执行中）
+    LOADED = "loaded"  # 已加载，正常运行
+    DISABLED = "disabled"  # 已禁用，跳过事件分发
+    ERROR = "error"  # 加载/运行出错
+    UNLOADING = "unloading"  # 正在卸载（on_unload 执行中）
 
 
 class PluginBase(ABC):
     """插件基类
 
     支持两种消息处理方式：
-    1. 旧式：重写 on_message(ctx) -> Optional[str]
+    1. 旧式：重写 on_message(ctx) -> str | None
     2. 新式：在 on_load 中注册 Matcher（self.matchers.append(on_command(...)(handler))）
        或用模块级装饰器 @on_command(...)（PluginManager 自动收集）
 
@@ -58,22 +59,22 @@ class PluginBase(ABC):
     _status: PluginStatus = PluginStatus.LOADING
 
     # 依赖引用（由框架注入）
-    bot: Optional[object] = None
-    db: Optional[object] = None
-    config: Optional[object] = None
-    connection: Optional[object] = None
-    llm: Optional[object] = None
-    scheduler: Optional[Any] = None
-    tool_registry: Optional[Any] = None
-    knowledge_store: Optional[Any] = None
-    session_state: Optional[Any] = None  # TTL 会话状态存储
-    event_bus: Optional[Any] = None  # 跨插件事件总线（发布-订阅）
+    bot: object | None = None
+    db: object | None = None
+    config: object | None = None
+    connection: object | None = None
+    llm: object | None = None
+    scheduler: Any | None = None
+    tool_registry: Any | None = None
+    knowledge_store: Any | None = None
+    session_state: Any | None = None  # TTL 会话状态存储
+    event_bus: Any | None = None  # 跨插件事件总线（发布-订阅）
 
     # Matcher 列表
-    matchers: Optional[list["Matcher"]] = None
+    matchers: list["Matcher"] | None = None
 
     # 插件级配置（由 PluginManager 从 config.yaml 加载）
-    plugin_config: Optional[Any] = None
+    plugin_config: Any | None = None
 
     # 导出注册表（插件间服务接口）
     _exports: dict[str, Any]
@@ -82,9 +83,9 @@ class PluginBase(ABC):
     _pages: list[dict[str, str]]
 
     # 中间件链（per-handler 钩子）
-    # before_handler: async (matcher, ctx) -> Optional[str]
+    # before_handler: async (matcher, ctx) -> str | None
     #   - 返回非 None 时拦截，跳过 handler 并将返回值作为回复
-    # after_handler: async (matcher, ctx, result) -> Optional[str]
+    # after_handler: async (matcher, ctx, result) -> str | None
     #   - 可修改/替换 handler 返回值
     _before_handlers: list[Any]
     _after_handlers: list[Any]
@@ -151,20 +152,21 @@ class PluginBase(ABC):
         """
         if self.bot is None:
             raise RuntimeError("插件未初始化，无法获取依赖")
-        dep = self.bot.plugin_manager.get(plugin_name)
+        bot: Any = self.bot  # bot 由框架注入（类型为 object | None），运行时具备 plugin_manager
+        dep = bot.plugin_manager.get(plugin_name)
         if dep is None:
             raise RuntimeError(f"依赖插件 {plugin_name} 未加载")
-        return dep._exports
+        return cast(dict[str, Any], dep._exports)
 
     # ---- 中间件 ----
 
     def register_before(self, fn) -> None:
-        """注册 handler 前置钩子：async (matcher, ctx) -> Optional[str]"""
+        """注册 handler 前置钩子：async (matcher, ctx) -> str | None"""
         if fn not in self._before_handlers:
             self._before_handlers.append(fn)
 
     def register_after(self, fn) -> None:
-        """注册 handler 后置钩子：async (matcher, ctx, result) -> Optional[str]"""
+        """注册 handler 后置钩子：async (matcher, ctx, result) -> str | None"""
         if fn not in self._after_handlers:
             self._after_handlers.append(fn)
 
@@ -180,11 +182,13 @@ class PluginBase(ABC):
                         插件 __init__.py 同级的 web/ 目录。
         """
         import os
+
         if not static_dir:
             # 自动探测：插件类所在模块同级的 web/ 目录
             module_file = getattr(type(self), "__module__", None)
             if module_file:
                 import importlib
+
                 try:
                     mod = importlib.import_module(module_file)
                     mod_path = getattr(mod, "__file__", None)
@@ -194,11 +198,13 @@ class PluginBase(ABC):
                             static_dir = candidate
                 except Exception:
                     pass
-        self._pages.append({
-            "title": title,
-            "icon": icon,
-            "static_dir": static_dir,
-        })
+        self._pages.append(
+            {
+                "title": title,
+                "icon": icon,
+                "static_dir": static_dir,
+            }
+        )
 
     # ---- 生命周期 ----
 
@@ -212,25 +218,35 @@ class PluginBase(ABC):
         """插件卸载时调用"""
         ...
 
-    async def on_message(self, ctx: MessageContext) -> Optional[str]:
-        """处理消息事件，返回回复文本或 None"""
+    async def on_message(self, ctx: MessageContext) -> str | None:
+        """处理消息事件，返回回复文本或 None（已弃用）
+
+        Deprecated: 请改用 Matcher（on_message / on_command 等）注册消息处理。
+        本回调保留仅为兼容旧插件，新插件请勿使用。
+        """
         return None
 
     async def on_notice(self, event: dict) -> None:
-        """处理通知事件"""
-        pass
+        """处理通知事件（已弃用）
 
-    async def on_request(self, event: dict) -> Optional[bool]:
-        """处理请求事件（加群/加好友），返回 True 同意 / False 拒绝 / None 忽略"""
+        Deprecated: 请改用 on_notice 事件 Matcher 注册处理。
+        """
+        return None
+
+    async def on_request(self, event: dict) -> bool | None:
+        """处理请求事件（加群/加好友），返回 True 同意 / False 拒绝 / None 忽略（已弃用）
+
+        Deprecated: 请改用 on_request 事件 Matcher 注册处理。
+        """
         return None
 
     async def on_disable(self):
         """插件被禁用时调用（可选覆写，用于停用定时任务等轻量清理）"""
-        pass
+        return None
 
     async def on_enable(self):
         """插件被启用时调用（可选覆写，用于恢复定时任务等）"""
-        pass
+        return None
 
     # ---- 全局生命周期钩子（可选覆写，默认空实现） ----
 
@@ -255,7 +271,7 @@ class PluginBase(ABC):
         """
         return None
 
-    async def on_metaevent(self, event: dict) -> Optional[bool]:
+    async def on_metaevent(self, event: dict) -> bool | None:
         """处理元事件（生命周期，如 heartbeat / connect / enable）
 
         返回 True 表示已消费该事件（与 on_request 的审批语义对齐）。

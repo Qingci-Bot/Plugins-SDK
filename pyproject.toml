@@ -3,7 +3,7 @@ name = "qingci-plugin-sdk"
 version = "1.5.1"
 description = "Qingci-Bot 插件 SDK — 独立可安装的插件开发工具包"
 requires-python = ">=3.10"
-license = { text = "GPL-3.0-or-later" }
+license = "GPL-3.0-or-later"
 dependencies = []
 
 [build-system]
@@ -12,3 +12,35 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 where = ["."]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+exclude = [".venv", "dist", "build", "__pycache__", ".git"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "W",   # pycodestyle warnings
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "B008",  # do not perform function calls in argument defaults
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+ignore_missing_imports = true
+exclude = [".venv", "dist", "build", "tests"]
