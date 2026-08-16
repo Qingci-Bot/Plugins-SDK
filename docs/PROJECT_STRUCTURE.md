@@ -26,7 +26,7 @@ Plugins-SDK/
 │   ├── ratelimit.py          # RateLimiter 限流
 │   ├── i18n.py               # I18n 国际化翻译器
 │   ├── llm_tool.py           # @llm_tool 插件级 LLM 工具声明
-│   └── paths.py              # app_root 路径解析（供 data_dir 使用）
+│   └── paths.py              # 路径解析：app_root 定位 + data_root 覆盖钩子（供 data_dir 重定向）
 ├── plugins/                  # 插件开发/验证环境
 │   ├── __init__.py           # 包标记
 │   ├── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）

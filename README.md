@@ -328,6 +328,7 @@ Plugins-SDK/
 plugins/my_plugin/          # 目录名 = 插件名（不能以 _ 或 . 开头）
 ├── __init__.py              # 必需：插件入口，含 PluginBase 子类
 ├── plugin.json              # 可选：元数据（替代类属性 name/version/author 等）
+├── requirements.txt         # 可选：Python 第三方依赖（主项目自动安装，见常见问题）
 ├── utils.py                 # 可选：插件内部模块
 └── web/                     # 可选：Web 管理页面静态文件
     ├── index.html           # 入口页面（register_page 自动加载）
@@ -876,6 +877,11 @@ async def get_time() -> str:
 `self.data_dir` 返回插件专属数据目录（`app_root()/data/plugins/<name>/`，
 自动创建，卸载不删除），用于持久化缓存、导出文件等。
 
+> **实例隔离（1.5.2+）**：主项目加载 SDK 式插件时会调用 `paths.set_data_root()`
+> 将数据根重定向到当前实例（`instances/<name>/data/`），此时 `data_dir` 为
+> `instances/<name>/data/plugins/<name>/`。`paths.data_root()` 可查询当前数据根；
+> 独立开发时未调用 `set_data_root()`，行为保持 `app_root()/data` 不变。
+
 ### 所有内置规则速查
 
 | 函数 | 签名 | 匹配条件 |
@@ -1118,7 +1124,7 @@ A: 在代码里加 `logger.info(...)` 打印日志，然后在 Qingci-Bot 的 We
 
 ### Q: 可以导入第三方库吗？
 
-A: 可以，但要确保主项目的 Python 环境里也安装了该库。建议尽量使用 SDK 提供的能力，减少外部依赖。
+A: 可以。在插件目录放置 `requirements.txt`（或在 `plugin.json` 的 `requirements` 字段）声明依赖，主项目加载插件时会自动安装到实例隔离目录（`data_root()/deps/`）并注入 `sys.path`，插件内可直接 `import`。该自动安装由主项目 `config.yaml` 的 `bot.auto_install_plugin_deps` 控制（默认开启，可关闭以降低供给链风险）。建议尽量使用 SDK 提供的能力，减少外部依赖。
 
 ### Q: 模板目录 `_template/` 会被加载吗？
 
