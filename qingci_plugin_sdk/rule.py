@@ -227,7 +227,7 @@ def rate_limit() -> Rule:
 
     行为约定：
     - bot.rate_limiter 为 None 或 rate_limit.enabled=False 时直接放行
-    - admin_users 豁免限流
+    - admin_users 与 super_admin 均豁免限流
     - 拒绝时通过 bot.connection 发送提示后返回 False
     """
 
@@ -237,7 +237,10 @@ def rate_limit() -> Rule:
         if limiter is None or rl_cfg is None or not rl_cfg.enabled:
             return True
         admin_users = bot.config.bot.admin_users if bot.config else []
-        if ctx.user_id in admin_users:
+        super_admin = (
+            getattr(bot.config.bot, "super_admin", None) if bot.config else None
+        )
+        if ctx.user_id in admin_users or ctx.user_id == super_admin:
             return True
         ok, reason = limiter.check(ctx.user_id)
         if ok:

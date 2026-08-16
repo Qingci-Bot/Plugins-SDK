@@ -499,8 +499,8 @@ rule = command("admin") & is_private()
 | 权限 | 说明 |
 |------|------|
 | `EVERYONE` | 所有人（默认） |
-| `SUPERUSER` | 超级管理员（config 中 `admin_users` 列表里的 QQ） |
-| `ADMIN` | 管理员（与 SUPERUSER 等价） |
+| `SUPERUSER` | 超级管理员（唯一，config 中 `bot.super_admin` 的 QQ） |
+| `ADMIN` | 普通管理员（config 中 `bot.admin_users` 列表里的 QQ；超级管理员自动继承） |
 | `PRIVATE` | 仅限私聊 |
 | `GROUP` | 仅限群聊 |
 | `MEMBER` | 普通群员（与 EVERYONE 等价） |
@@ -889,8 +889,8 @@ async def get_time() -> str:
 | 权限 | 类型 | 说明 |
 |------|------|------|
 | `EVERYONE` | 常量 | 所有人 |
-| `SUPERUSER` | 常量 | 超级管理员 |
-| `ADMIN` | 常量 | 管理员（同 SUPERUSER） |
+| `SUPERUSER` | 常量 | 超级管理员（唯一，`bot.super_admin`） |
+| `ADMIN` | 常量 | 普通管理员（`bot.admin_users`；超级管理员自动继承） |
 | `PRIVATE` | 常量 | 私聊 |
 | `GROUP` | 常量 | 群聊 |
 | `MEMBER` | 常量 | 普通群员 |
