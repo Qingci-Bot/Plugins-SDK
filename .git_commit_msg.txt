@@ -1,0 +1,11 @@
+feat: 会话阶梯（多轮交互）— Session + 控制流异常
+
+- 新增 qingci_plugin_sdk/session.py：Session 对象（send/pause/finish/reject）
+  与控制流异常 PauseException/FinishException/RejectException；
+  发送行为由宿主注入 send_fn，独立环境（无宿主）下 send_fn 为 None 时
+  仅执行控制流，便于冒烟测试
+- MatcherContext 新增 session 字段（运行时由 Dispatcher 注入）
+- __init__.py 导出 Session/PauseException/FinishException/RejectException
+- 模板 plugins/_template 新增 /wizard 会话阶梯示例；模板演示 import 加
+  ruff: noqa: F401 豁免；hello 示例 import 排序修正
+- README 新增「会话阶梯（多轮交互）」章节；CHANGELOG 记录

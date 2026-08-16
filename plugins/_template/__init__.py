@@ -34,39 +34,44 @@ self.llm          - LLM 管理器
 self.scheduler    - 定时任务调度器（可能为 None，需判空）
 self.tool_registry - Function Calling 工具注册表（可能为 None）
 self.knowledge_store - 知识库（可能为 None）
+
+本模板是教学代码：头部集中导入全部可用的 SDK 符号以便演示，
+部分符号在示例中未全部使用，属有意为之（# noqa: F401 豁免）。
 """
+
+# ruff: noqa: F401
 
 import asyncio
 import logging
 from datetime import datetime, timezone
 
 from qingci_plugin_sdk import (
-    PluginBase,
-    MatcherContext,
-    on_command,
-    on_message,
-    on_startswith,
-    on_keyword,
-    on_notice,
-    on_request,
-    Permission,
-    EVERYONE,
-    SUPERUSER,
     ADMIN,
-    PRIVATE,
+    EVERYONE,
     GROUP,
+    PRIVATE,
+    SUPERUSER,
     USER,
+    MatcherContext,
+    Permission,
+    PluginBase,
     Rule,
     command,
-    subcommand,
-    startswith,
-    keyword,
-    regex,
-    to_me,
-    is_private,
     is_group,
-    rate_limit,
+    is_private,
+    keyword,
     llm_tool,
+    on_command,
+    on_keyword,
+    on_message,
+    on_notice,
+    on_request,
+    on_startswith,
+    rate_limit,
+    regex,
+    startswith,
+    subcommand,
+    to_me,
 )
 
 logger = logging.getLogger("qingci-bot.plugin.template")
@@ -166,7 +171,18 @@ class TemplatePlugin(PluginBase):
             )(self._cmd_user)
         )
 
-        # ─── 8. 一次性 Matcher（temp=True）───────────────────────
+        # ─── 8. 会话阶梯 Matcher（多轮交互）────────────────────
+        # handler 内用 ctx.session 控制多轮流程：pause 挂起等待下一条
+        # 同会话消息续接同一 handler，finish 结束，reject 拒绝继续等
+        self.matchers.append(
+            on_command(
+                "wizard",
+                description="多轮向导（会话阶梯示例）",
+                priority=1,
+            )(self._cmd_wizard)
+        )
+
+        # ─── 9. 一次性 Matcher（temp=True）───────────────────────
         # 执行一次后自动移除，适合"下一条消息"场景
         self.matchers.append(
             on_message(
@@ -177,7 +193,7 @@ class TemplatePlugin(PluginBase):
             )(self._cmd_next_message)
         )
 
-        # ─── 9. 定时任务（需 self.scheduler 可用）────────────────
+        # ─── 10. 定时任务（需 self.scheduler 可用）────────────────
         if self.scheduler is not None:
             # 每小时执行
             self.scheduler.add_job(
@@ -274,6 +290,19 @@ class TemplatePlugin(PluginBase):
     async def _cmd_user(self, ctx: MatcherContext) -> str:
         """子指令父指令：/user info 走这里，/user ban x 走子指令 handler"""
         return f"用户状态: {ctx.args or 'unknown'}"
+
+    async def _cmd_wizard(self, ctx: MatcherContext) -> None:
+        """多轮向导：演示会话阶梯（pause/finish + 跨轮状态）"""
+        step = getattr(ctx.session, "step", "ask_name")
+        if step == "ask_name":
+            ctx.session.step = "ask_age"  # 跨轮保留状态
+            await ctx.session.pause("请输入你的名字：")  # 挂起等待下一条消息
+        if step == "ask_age":
+            ctx.session.name = ctx.plain_text
+            ctx.session.step = "done"
+            await ctx.session.pause(f"你好 {ctx.session.name}，请输入你的年龄：")
+        ctx.session.age = ctx.plain_text
+        await ctx.session.finish(f"向导完成：{ctx.session.name}，{ctx.session.age}岁")
 
     async def _cmd_next_message(self, ctx: MatcherContext) -> str:
         """一次性匹配器：触发后自动移除"""

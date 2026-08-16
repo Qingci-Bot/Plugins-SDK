@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any
 from .context import MessageContext
 from .permission import EVERYONE, Permission
 from .rule import Rule
+from .session import Session
 
 if TYPE_CHECKING:
     from .base import PluginBase
@@ -41,6 +42,8 @@ class MatcherContext(MessageContext):
     parsed_args: dict = field(default_factory=dict)
     # session_state 由主项目 Dispatcher 运行时注入（TTL 会话状态存储）
     session_state: Any | None = field(default=None, repr=False)
+    # 会话阶梯对象（由主项目 Dispatcher 运行时注入；多轮交互控制句柄）
+    session: Session | None = field(default=None, repr=False)
 
     @classmethod
     def from_message_context(

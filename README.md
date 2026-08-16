@@ -30,6 +30,7 @@
   - [规则 Rule](#规则-rule)
   - [权限 Permission](#权限-permission)
   - [上下文 MatcherContext](#上下文-matchercontext)
+  - [会话阶梯（多轮交互）](#会话阶梯多轮交互)
   - [依赖注入](#依赖注入)
 - [完整 API 参考](#完整-api-参考)
   - [从 SDK 导入](#从-sdk-导入)
@@ -277,6 +278,7 @@ Plugins-SDK/
 │   ├── rule.py              # Rule 规则系统 + 内置规则
 │   ├── permission.py        # Permission 权限系统 + 内置权限
 │   ├── ratelimit.py         # RateLimiter 限流器
+│   ├── session.py           # 会话阶梯（多轮交互）：Session + Pause/Finish/Reject 异常
 │   ├── i18n.py              # I18n 国际化翻译器
 │   ├── llm_tool.py          # @llm_tool 插件级 LLM 工具声明
 │   └── paths.py             # app_root 路径解析 + data_root 覆盖钩子（供 data_dir 使用）
@@ -567,7 +569,48 @@ async def handler(ctx: MatcherContext) -> str:
     ctx.bot            # Bot 实例
     ctx.plugin         # 当前插件实例
     ctx.matcher        # 当前匹配器实例
+
+    # 会话阶梯（多轮交互）
+    ctx.session        # Session 对象：pause/finish/reject/send 控制多轮流程
 ```
+
+### 会话阶梯（多轮交互）
+
+用 `ctx.session` 实现声明式的多轮对话：handler 不再"一次事件一次回复"，而是可以挂起等待用户下一条消息，逐轮收集信息后结束。适合问卷、配置向导、游戏对局等场景。
+
+```python
+from qingci_plugin_sdk import PauseException, RejectException
+
+@on_command("wizard")
+async def wizard(ctx: MatcherContext):
+    step = getattr(ctx.session, "step", "ask_name")
+    if step == "ask_name":
+        ctx.session.step = "ask_age"                      # 跨轮状态
+        await ctx.session.pause("请输入你的名字：")          # 挂起，等待下一条消息
+
+    if step == "ask_age":
+        ctx.session.name = ctx.plain_text
+        ctx.session.step = "done"
+        await ctx.session.pause(f"你好 {ctx.session.name}，请输入你的年龄：")
+
+    ctx.session.age = ctx.plain_text
+    await ctx.session.finish(f"向导完成：{ctx.session.name}，{ctx.session.age}岁")
+```
+
+**控制流 API：**
+
+| 方法 | 行为 |
+|------|------|
+| `await ctx.session.send(text)` | 发送文本，不结束（handler 可继续执行） |
+| `await ctx.session.pause(text)` | 发送文本并挂起，下一条同会话消息续接同一 handler（跳过命令前缀规则） |
+| `await ctx.session.finish(text)` | 发送文本并结束阶梯，不再续接 |
+| `await ctx.session.reject(text)` | 发送文本，拒绝当前输入并继续等待（可做输入校验） |
+
+**特性：**
+- Session 实例在阶梯期间跨轮复用：`ctx.session.任意属性 = 值` 可在多轮之间保留
+- 阶梯默认 300 秒超时，超时后下一条消息不再续接；插件卸载/禁用时自动清理
+- 提示文本走主动发送通道；handler 正常 `return` 的文本走回复通道
+- 阶梯按会话隔离（私聊按用户、群聊按 `群号+用户`），不同用户互不干扰
 
 ### 依赖注入
 

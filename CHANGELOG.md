@@ -9,6 +9,7 @@
 ### Added
 
 - `paths.set_data_root()` / `paths.data_root()`：可写数据根目录的运行时覆盖钩子。宿主应用（Qingci-Bot）加载 SDK 式插件时通过 `set_data_root()` 将插件数据目录重定向到实例可写数据根，保证实例隔离；`base.PluginBase.data_dir` 改走 `data_root()/plugins/<name>/`（默认行为不变，仍为 `app_root()/data`）。
+- **会话阶梯（多轮交互）**：新增 `Session` 对象与控制流异常（`PauseException`/`FinishException`/`RejectException`），`MatcherContext` 新增 `session` 字段。handler 内可 `await ctx.session.pause("提示")` 挂起等待同会话下一条消息续接、`finish()` 结束阶梯、`reject()` 拒绝当前输入继续等待、`send()` 发送而不结束；跨轮可复用同一 Session 实例保留自定义属性。已从包根导出（`from qingci_plugin_sdk import Session, PauseException, ...`）。
 
 ### Changed
 

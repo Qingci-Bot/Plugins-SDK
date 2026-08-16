@@ -18,10 +18,10 @@
 import logging
 
 from qingci_plugin_sdk import (
-    PluginBase,
     MatcherContext,
-    on_command,
+    PluginBase,
     llm_tool,
+    on_command,
 )
 
 logger = logging.getLogger("qingci-bot.plugin.hello")

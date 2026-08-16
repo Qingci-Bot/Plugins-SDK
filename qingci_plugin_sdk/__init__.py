@@ -51,6 +51,7 @@ from .rule import (
     subcommand,
     to_me,
 )
+from .session import FinishException, PauseException, RejectException, Session
 
 __all__ = [
     # 基础
@@ -100,4 +101,9 @@ __all__ = [
     "rate_limit",
     # RateLimit
     "RateLimiter",
+    # 会话阶梯
+    "Session",
+    "PauseException",
+    "FinishException",
+    "RejectException",
 ]
