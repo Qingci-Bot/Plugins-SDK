@@ -236,11 +236,9 @@ def rate_limit() -> Rule:
         limiter = getattr(bot, "rate_limiter", None) if bot else None
         if limiter is None or rl_cfg is None or not rl_cfg.enabled:
             return True
-        admin_users = bot.config.bot.admin_users if bot.config else []
-        super_admin = (
-            getattr(bot.config.bot, "super_admin", None) if bot.config else None
-        )
-        if ctx.user_id in admin_users or ctx.user_id == super_admin:
+        # 管理员豁免（super_admin + admin_users 并集，O(1) 成员判断）
+        admins = getattr(bot.config.bot, "admin_set", None) if bot.config else None
+        if admins is not None and ctx.user_id in admins:
             return True
         ok, reason = limiter.check(ctx.user_id)
         if ok:

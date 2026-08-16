@@ -4,6 +4,12 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [Unreleased]
+
+### Changed
+
+- 权限判定改用 `bot.config.bot.admin_set` 预编译集合（`super_admin` + `admin_users` 并集，O(1) 成员判断），`rule` 限流豁免同步受益；无 `admin_set` 属性的旧配置对象回退到列表判断，保持兼容
+
 ## [1.5.1] - 2026-08-16
 
 ### 新增
@@ -58,3 +64,9 @@
 - `Rule` 规则系统（`command`/`startswith`/`keyword`/`regex`/`to_me`/`is_private`/`is_group`/`rate_limit` 等）。
 - `Permission` 权限体系、`RateLimiter` 限流。
 - 插件开发指南 `README.md` 与插件模板 `_template`。
+
+[1.5.1]: https://atomgit.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.5.1
+[1.5.0]: https://atomgit.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.5.0
+[1.4.1]: https://atomgit.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.4.1
+[1.4.0]: https://atomgit.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.4.0
+[1.0.0]: https://atomgit.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.0.0
