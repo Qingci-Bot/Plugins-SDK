@@ -22,6 +22,7 @@ class MessageContext:
     user_id: int = 0
     group_id: int = 0
     self_id: int = 0  # Bot 自己的 QQ 号
+    platform: str = "onebot"  # 消息来源平台（onebot / telegram / ...）
 
     # 消息内容
     raw_message: str = ""  # CQ 码原始文本
