@@ -6,6 +6,8 @@
 
 独立于主项目的插件开发环境，包含完整的 SDK 和模板。你只需要一台电脑、一个代码编辑器，就可以开始开发插件。
 
+本仓库是**插件协议层的唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext` 等协议定义在这里维护，主项目 `Qingci-Bot-CE` 的 `bot/plugin/` 为薄转发，内置插件与外部插件共用同一套 API。
+
 > 主项目：[Qingci-Bot-CE](https://atomgit.com/Qingci-Bot/Qingci-Bot-CE) — 基于 Python 的 QQ 机器人框架
 
 **相关文档：**
@@ -267,17 +269,17 @@ Plugins-SDK/
 ├── uv.lock                  # 依赖锁定文件
 ├── .gitignore               # Git 忽略规则
 ├── LICENSE                  # GPL-3.0 许可证
-├── qingci_plugin_sdk/       # 插件 SDK（零外部依赖，纯 Python）
+├── qingci_plugin_sdk/       # 插件 SDK（零外部依赖，纯 Python；插件协议层的唯一来源）
 │   ├── __init__.py          # 统一导出所有 API
-│   ├── base.py              # PluginBase 插件基类
-│   ├── context.py           # MessageContext 消息上下文
+│   ├── base.py              # PluginBase 插件基类（旧式 on_message/on_notice/on_request 已弃用）
+│   ├── context.py           # MessageContext 消息上下文（主项目 dispatcher 转发同一类型）
 │   ├── matcher.py           # Matcher 匹配器 + 工厂函数
 │   ├── rule.py              # Rule 规则系统 + 内置规则
 │   ├── permission.py        # Permission 权限系统 + 内置权限
 │   ├── ratelimit.py         # RateLimiter 限流器
 │   ├── i18n.py              # I18n 国际化翻译器
 │   ├── llm_tool.py          # @llm_tool 插件级 LLM 工具声明
-│   └── paths.py             # app_root 路径解析（供 data_dir 使用）
+│   └── paths.py             # app_root 路径解析 + data_root 覆盖钩子（供 data_dir 使用）
 └── plugins/                 # 你的插件源码都放在这里
     ├── _template/           # 完整开发模板（以 _ 开头，不会被加载）
     │   └── __init__.py
@@ -410,6 +412,8 @@ plugin.enabled       # bool，向后兼容：LOADING/LOADED 为 True
 | `DISABLED` | `"disabled"` | 已禁用，跳过事件分发 |
 | `ERROR` | `"error"` | 加载/运行出错 |
 | `UNLOADING` | `"unloading"` | 正在卸载 |
+
+> **旧式回调已弃用**：`on_message(ctx)` / `on_notice(event)` / `on_request(event)` 这三个重写式回调标记为 deprecated，仅向后兼容旧插件。新插件请使用 Matcher（`on_message(rule=...)` / `on_command(...)` / `on_notice(...)` / `on_request(...)` 装饰器），见下一节「匹配器 Matcher」。
 
 ### 匹配器 Matcher
 
