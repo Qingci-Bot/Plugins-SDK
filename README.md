@@ -1,5 +1,7 @@
 # Qingci-Bot-CE 插件开发工作区
 
+> **代码托管**：本仓库以 [GitHub](https://github.com/Qingci-Bot/Plugins-SDK) 为权威主仓库，[AtomGit](https://atomgit.com/Qingci-Bot/Plugins-SDK) 为自动同步的只读镜像；贡献与提 PR 一律以 GitHub 为准。
+
 > 本项目底层核心代码由 [**Zhou Zhe (aka luoqingci)**](https://github.com/luoqingciya) 原创，并授予 [Qingci-Bot](https://github.com/Qingci-Bot) 组织持续开发。
 
 > 零基础也能看懂的插件开发指南。读完这篇文档，你就能写出自己的 QQ 机器人插件。
