@@ -1,6 +1,6 @@
 # Qingci-Bot-CE 插件开发工作区
 
-> 本项目底层核心代码由 [**Zhou Zhe (aka luoqingci)**](https://atomgit.com/luoqingci) 原创，并授予 [Qingci-Bot](https://atomgit.com/Qingci-Bot) 组织持续开发。
+> 本项目底层核心代码由 [**Zhou Zhe (aka luoqingci)**](https://github.com/luoqingciya) 原创，并授予 [Qingci-Bot](https://github.com/Qingci-Bot) 组织持续开发。
 
 > 零基础也能看懂的插件开发指南。读完这篇文档，你就能写出自己的 QQ 机器人插件。
 
@@ -8,7 +8,7 @@
 
 本仓库是**插件协议层的唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext` 等协议定义在这里维护，主项目 `Qingci-Bot-CE` 的 `bot/plugin/` 为薄转发，内置插件与外部插件共用同一套 API。
 
-> 主项目：[Qingci-Bot-CE](https://atomgit.com/Qingci-Bot/Qingci-Bot-CE) — 基于 Python 的 QQ 机器人框架
+> 主项目：[Qingci-Bot-CE](https://github.com/Qingci-Bot/Qingci-Bot-CE) — 基于 Python 的 QQ 机器人框架
 
 **相关文档：**
 - [项目结构规范](docs/PROJECT_STRUCTURE.md) — 目录职责与产物归属
