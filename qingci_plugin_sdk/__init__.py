@@ -7,6 +7,8 @@
     uv pip install -e .    # 从 Plugins-SDK 目录
 """
 
+__version__ = "1.6.0"
+
 from .base import PluginBase, PluginStatus
 from .context import MessageContext
 from .events import (
@@ -72,6 +74,8 @@ from .rule import (
 from .session import FinishException, PauseException, RejectException, Session
 
 __all__ = [
+    # 版本
+    "__version__",
     # 基础
     "PluginBase",
     "PluginStatus",

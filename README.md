@@ -977,7 +977,7 @@ async def get_time() -> str:
 `self.data_dir` 返回插件专属数据目录（`app_root()/data/plugins/<name>/`，
 自动创建，卸载不删除），用于持久化缓存、导出文件等。
 
-> **实例隔离（1.5.2+）**：主项目加载 SDK 式插件时会调用 `paths.set_data_root()`
+> **实例隔离（1.6.0+）**：主项目加载 SDK 式插件时会调用 `paths.set_data_root()`
 > 将数据根重定向到当前实例（`instances/<name>/data/`），此时 `data_dir` 为
 > `instances/<name>/data/plugins/<name>/`。`paths.data_root()` 可查询当前数据根；
 > 独立开发时未调用 `set_data_root()`，行为保持 `app_root()/data` 不变。

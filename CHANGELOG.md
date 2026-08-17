@@ -4,7 +4,7 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
-## [Unreleased]
+## [1.6.0] - 2026-08-17
 
 ### Added
 
@@ -76,6 +76,7 @@
 - `Permission` 权限体系、`RateLimiter` 限流。
 - 插件开发指南 `README.md` 与插件模板 `_template`。
 
+[1.6.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.6.0
 [1.5.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.5.1
 [1.5.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.5.0
 [1.4.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.4.1
