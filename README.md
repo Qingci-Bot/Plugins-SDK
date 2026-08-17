@@ -610,6 +610,9 @@ async def handler(ctx: MatcherContext) -> str:
     ctx.is_at_bot      # 是否 @ 了机器人 (bool)
     ctx.message_type   # "group" 或 "private" (str)
 
+    # 来源平台（多平台适配器，由框架在事件入口注入）
+    ctx.platform       # 来源平台标识："onebot" / "telegram" / ...（默认 "onebot"）
+
     # 原始事件
     ctx.raw_event      # OneBot 原始事件 dict
 

@@ -8,6 +8,7 @@
 
 ### Added
 
+- `MessageContext` 新增 `platform` 字段（默认 `"onebot"`）：标识消息来源平台（多平台适配器基础）。宿主应用（Qingci-Bot）的多平台适配器在事件入口归一化时注入该字段，回复按其路由回对应平台；插件无需感知来源平台，一套 Matcher/Rule/Permission 逻辑天然支持所有已接入平台（`onebot`/`telegram`/...）。
 - `paths.set_data_root()` / `paths.data_root()`：可写数据根目录的运行时覆盖钩子。宿主应用（Qingci-Bot）加载 SDK 式插件时通过 `set_data_root()` 将插件数据目录重定向到实例可写数据根，保证实例隔离；`base.PluginBase.data_dir` 改走 `data_root()/plugins/<name>/`（默认行为不变，仍为 `app_root()/data`）。
 - **会话阶梯（多轮交互）**：新增 `Session` 对象与控制流异常（`PauseException`/`FinishException`/`RejectException`），`MatcherContext` 新增 `session` 字段。handler 内可 `await ctx.session.pause("提示")` 挂起等待同会话下一条消息续接、`finish()` 结束阶梯、`reject()` 拒绝当前输入继续等待、`send()` 发送而不结束；跨轮可复用同一 Session 实例保留自定义属性。已从包根导出（`from qingci_plugin_sdk import Session, PauseException, ...`）。
 - **类型化事件**：新增 `events.py` 定义 notice/request 事件模型（`NoticeEvent`/`RequestEvent` 基类 + 9 个 notice 子类 + 2 个 request 子类）与解析工厂（`parse_notice_event`/`parse_request_event`/`parse_event`）。`MatcherContext` 新增 `event` 字段，handler 可按参数注解注入类型化事件对象（如 `event: GroupIncreaseNotice`）；字段按 OneBot 11 规范类型化，数值安全转换，未知类型回退基类。零依赖 dataclass 实现，已从包根导出。
