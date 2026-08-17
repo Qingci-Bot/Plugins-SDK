@@ -1,6 +1,6 @@
 # Qingci-Bot-CE 插件开发工作区
 
-> **代码托管**：本仓库以 [GitHub](https://github.com/Qingci-Bot/Plugins-SDK) 为权威主仓库，[AtomGit](https://atomgit.com/Qingci-Bot/Plugins-SDK) 为自动同步的只读镜像；贡献与提 PR 一律以 GitHub 为准。
+> **代码托管**：本项目以 [GitHub](https://github.com/Qingci-Bot/Plugins-SDK) 为唯一仓库；贡献与提 PR 一律以 GitHub 为准。
 
 > 本项目底层核心代码由 [**Zhou Zhe (aka luoqingci)**](https://github.com/luoqingciya) 原创，并授予 [Qingci-Bot](https://github.com/Qingci-Bot) 组织持续开发。
 
