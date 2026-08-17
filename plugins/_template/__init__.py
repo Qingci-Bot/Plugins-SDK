@@ -312,18 +312,14 @@ class TemplatePlugin(PluginBase):
 
     # ========== 通知/请求处理器 ==========
 
-    async def _on_group_notice(
-        self, ctx: MatcherContext, event: GroupIncreaseNotice
-    ) -> str:
+    async def _on_group_notice(self, ctx: MatcherContext, event: GroupIncreaseNotice) -> str:
         """群通知事件处理（类型化事件注入）"""
         if event.notice_type == "group_increase":
             return f"欢迎新成员 {event.user_id} 加入群聊！"
 
         return None  # 不处理的事件返回 None
 
-    async def _on_friend_request(
-        self, ctx: MatcherContext, event: FriendRequestEvent
-    ) -> bool:
+    async def _on_friend_request(self, ctx: MatcherContext, event: FriendRequestEvent) -> bool:
         """加好友请求处理（类型化事件注入，返回 bool 审批）"""
         logger.info(f"收到好友请求: user_id={event.user_id}, comment={event.comment}")
         return True  # True 同意 / False 拒绝
@@ -346,6 +342,7 @@ class TemplatePlugin(PluginBase):
     async def _tool_get_time(self, timezone_offset: int = 8) -> str:
         """LLM 可调用的工具：获取当前时间"""
         from datetime import timedelta
+
         tz = timezone(timedelta(hours=timezone_offset))
         now = datetime.now(tz)
         return now.strftime("%Y-%m-%d %H:%M:%S")
@@ -362,6 +359,7 @@ class TemplatePlugin(PluginBase):
 
 # ========== 模块级装饰器（可选）==========
 # 也可在模块顶层用装饰器注册，PluginManager 加载时自动收集
+
 
 @on_command("status", description="查看状态")
 async def status_handler(ctx: MatcherContext) -> str:

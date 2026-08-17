@@ -1,0 +1,139 @@
+"""Plugins-SDK 冒烟测试 — 验证核心导出与基础行为（零外部依赖）
+
+保证 SDK 作为独立包可安装、可导入，核心协议对象（PluginBase /
+Matcher / Rule / MessageContext / 类型化事件 / i18n / llm_tool）
+的基本行为正确，防止协议层回归。
+"""
+
+import qingci_plugin_sdk as sdk
+from qingci_plugin_sdk import (
+    EVERYONE,
+    GroupIncreaseNotice,
+    I18n,
+    MessageContext,
+    PluginBase,
+    PluginStatus,
+    llm_tool,
+    on_startswith,
+    parse_event,
+    parse_notice_event,
+    startswith,
+)
+
+
+def test_version():
+    assert isinstance(sdk.__version__, str)
+    parts = sdk.__version__.split(".")
+    assert len(parts) >= 2
+    assert all(p.isdigit() for p in parts)
+
+
+def test_plugin_base_instantiation():
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    p = DemoPlugin()
+    assert p.name == "demo"
+    assert p.status == PluginStatus.LOADING  # 初始过渡态
+    assert p.enabled is True  # LOADING 视为启用（向后兼容）
+    # LOADED → 禁用 → 恢复
+    p._status = PluginStatus.LOADED
+    p.enabled = False
+    assert p.status == PluginStatus.DISABLED
+    assert p.enabled is False
+    p.enabled = True
+    assert p.status == PluginStatus.LOADED
+
+
+def test_message_context_basics():
+    ctx = MessageContext(
+        message_type="group",
+        user_id=100,
+        group_id=200,
+        raw_message="你好",
+        sender={"nickname": "Alice", "card": ""},
+    )
+    assert ctx.sender_name == "Alice"
+    assert ctx.platform == "onebot"  # 默认平台
+
+
+async def test_startswith_rule_matches():
+    rule = startswith("你好")
+    ctx = MessageContext(raw_message="你好世界", plain_text="你好世界")
+    assert await rule.check(None, {}, ctx) is True
+    assert ctx.args == "世界"  # 前缀被去除写入 args
+
+
+async def test_startswith_rule_rejects():
+    rule = startswith("你好")
+    ctx = MessageContext(raw_message="hello world", plain_text="hello world")
+    assert await rule.check(None, {}, ctx) is False
+
+
+def test_on_startswith_builds_matcher():
+    def handler(ctx):
+        return "pong"
+
+    matcher = on_startswith("ping")(handler)
+    assert matcher.handler is handler
+    assert matcher.event_type == "message"
+    assert matcher.permission == EVERYONE
+    assert matcher.block is True
+
+
+def test_parse_notice_group_increase():
+    raw = {
+        "post_type": "notice",
+        "notice_type": "group_increase",
+        "time": 1786889000,
+        "self_id": 1,
+        "user_id": 100,
+        "group_id": 200,
+        "sub_type": "approve",
+    }
+    ev = parse_notice_event(raw)
+    assert isinstance(ev, GroupIncreaseNotice)
+    assert ev.user_id == 100
+    assert ev.group_id == 200
+    assert ev.sub_type == "approve"
+
+
+def test_parse_event_router():
+    raw = {"post_type": "notice", "notice_type": "group_increase", "user_id": 1}
+    ev = parse_event("notice", raw)
+    assert isinstance(ev, GroupIncreaseNotice)
+    assert parse_event("meta", raw) is None  # 未知类型返回 None
+
+
+def test_i18n_translate():
+    i18n = I18n(translations={"hello": "你好"})
+    assert i18n.t("hello") == "你好"
+    assert i18n.t("missing") == "missing"  # 缺失 key 原样返回
+    assert I18n(translations={"greet": "你好，{name}"}).t("greet", name="世界") == "你好，世界"
+
+
+def test_llm_tool_decorator():
+    @llm_tool(description="加法")
+    def add(a: int, b: int) -> int:
+        return a + b
+
+    assert add(1, 2) == 3  # 装饰器不改原函数行为
+    from qingci_plugin_sdk.llm_tool import begin_tool_collection, end_tool_collection
+
+    specs = begin_tool_collection()
+    try:
+
+        @llm_tool(description="乘法")
+        def mul(a: int, b: int) -> int:
+            return a * b
+
+    finally:
+        end_tool_collection()
+    assert any(s.handler is mul for s in specs)
+    assert any(s.description == "乘法" for s in specs)

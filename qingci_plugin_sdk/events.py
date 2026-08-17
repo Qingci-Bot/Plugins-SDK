@@ -58,13 +58,13 @@ def _int(value, default: int = 0) -> int:
 class NoticeEvent:
     """通知事件基类（通用字段 + 原始事件）"""
 
-    time: int = 0          # 事件发生时间戳（秒）
-    self_id: int = 0       # 机器人自身 QQ 号
-    post_type: str = ""    # 事件类型（恒为 "notice"）
+    time: int = 0  # 事件发生时间戳（秒）
+    self_id: int = 0  # 机器人自身 QQ 号
+    post_type: str = ""  # 事件类型（恒为 "notice"）
     notice_type: str = ""  # 通知子类型
-    sub_type: str = ""     # 子类型（如 approve/invite/leave/kick）
-    user_id: int = 0       # 操作相关用户
-    group_id: int = 0      # 群号（群相关事件）
+    sub_type: str = ""  # 子类型（如 approve/invite/leave/kick）
+    user_id: int = 0  # 操作相关用户
+    group_id: int = 0  # 群号（群相关事件）
     raw_event: dict = field(default_factory=dict, repr=False)  # 原始事件
 
 
@@ -86,8 +86,8 @@ class GroupDecreaseNotice(NoticeEvent):
 class GroupBanNotice(NoticeEvent):
     """群禁言（sub_type: ban/lift_ban）"""
 
-    operator_id: int = 0   # 操作者 QQ
-    duration: int = 0      # 禁言时长（秒）
+    operator_id: int = 0  # 操作者 QQ
+    duration: int = 0  # 禁言时长（秒）
 
 
 @dataclass
@@ -99,8 +99,8 @@ class GroupAdminNotice(NoticeEvent):
 class GroupRecallNotice(NoticeEvent):
     """群消息撤回（sub_type: recall）"""
 
-    operator_id: int = 0   # 操作者 QQ
-    message_id: int = 0    # 被撤回消息 ID
+    operator_id: int = 0  # 操作者 QQ
+    message_id: int = 0  # 被撤回消息 ID
 
 
 @dataclass
@@ -178,14 +178,14 @@ def parse_notice_event(raw: dict) -> NoticeEvent:
 class RequestEvent:
     """请求事件基类（通用字段 + 原始事件）"""
 
-    time: int = 0          # 事件发生时间戳（秒）
-    self_id: int = 0       # 机器人自身 QQ 号
-    post_type: str = ""    # 事件类型（恒为 "request"）
+    time: int = 0  # 事件发生时间戳（秒）
+    self_id: int = 0  # 机器人自身 QQ 号
+    post_type: str = ""  # 事件类型（恒为 "request"）
     request_type: str = ""  # 请求子类型（friend/group）
-    sub_type: str = ""     # 子类型（group: add/invite）
-    user_id: int = 0       # 请求者 QQ
-    comment: str = ""      # 验证信息
-    flag: str = ""         # 请求 flag（审批时回传）
+    sub_type: str = ""  # 子类型（group: add/invite）
+    user_id: int = 0  # 请求者 QQ
+    comment: str = ""  # 验证信息
+    flag: str = ""  # 请求 flag（审批时回传）
     raw_event: dict = field(default_factory=dict, repr=False)  # 原始事件
 
 

@@ -1,4 +1,4 @@
-﻿"""匹配器系统 — 插件 SDK 独立版本
+"""匹配器系统 — 插件 SDK 独立版本
 
 核心概念：
 - Matcher: 绑定 handler + rule + permission + priority 的匹配单元

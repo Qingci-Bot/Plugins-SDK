@@ -135,8 +135,8 @@ cp -r plugins/_template plugins/my_plugin
 
 ```python
 class TemplatePlugin(PluginBase):
-    name = "template"       # 改成你的插件名，比如 "my_plugin"
-    author = "YourName"     # 改成你的名字
+    name = "template"  # 改成你的插件名，比如 "my_plugin"
+    author = "YourName"  # 改成你的名字
 ```
 
 把 `name` 和 `author` 改成你自己的，然后保存。
@@ -178,10 +178,11 @@ plugins/my_first_plugin/
 
 ```python
 """我的第一个插件"""
+
 import logging
 from qingci_plugin_sdk import (
     PluginBase,
-    PluginStatus,       # 插件状态枚举
+    PluginStatus,  # 插件状态枚举
     MatcherContext,
     on_command,
     on_startswith,
@@ -193,7 +194,7 @@ logger = logging.getLogger("qingci-bot.plugin.my_first")
 
 class MyFirstPlugin(PluginBase):
     # ===== 插件信息 =====
-    name = "my_first"         # 唯一标识，不能跟其他插件重名
+    name = "my_first"  # 唯一标识，不能跟其他插件重名
     version = "1.0.0"
     author = "你的名字"
     description = "我的第一个插件"
@@ -202,19 +203,13 @@ class MyFirstPlugin(PluginBase):
     async def on_load(self):
         """插件加载时，在这里注册你的功能"""
         # 功能1: /hello 命令
-        self.matchers.append(
-            on_command("hello", priority=1)(self._handle_hello)
-        )
+        self.matchers.append(on_command("hello", priority=1)(self._handle_hello))
 
         # 功能2: "天气 xxx" 前缀
-        self.matchers.append(
-            on_startswith("天气", priority=10)(self._handle_weather)
-        )
+        self.matchers.append(on_startswith("天气", priority=10)(self._handle_weather))
 
         # 功能3: 关键词"帮助"
-        self.matchers.append(
-            on_keyword("帮助", priority=5)(self._handle_help)
-        )
+        self.matchers.append(on_keyword("帮助", priority=5)(self._handle_help))
 
         logger.info("我的第一个插件已加载！")
 
@@ -358,16 +353,17 @@ plugins/my_plugin/          # 目录名 = 插件名（不能以 _ 或 . 开头�
 ```python
 from qingci_plugin_sdk import PluginBase, PluginStatus
 
+
 class MyPlugin(PluginBase):
     # ===== 必填 =====
-    name = "my_plugin"        # 插件唯一标识
+    name = "my_plugin"  # 插件唯一标识
 
     # ===== 可选 =====
-    version = "1.0.0"        # 版本号
-    author = "YourName"       # 作者
-    description = "我的插件"   # 简介
-    category = "tool"         # 分类：chat / admin / tool / fun / 自定义
-    require = []              # 依赖的其他插件，支持 PEP 440 版本约束（如 "chat>=1.0,<2.0"）
+    version = "1.0.0"  # 版本号
+    author = "YourName"  # 作者
+    description = "我的插件"  # 简介
+    category = "tool"  # 分类：chat / admin / tool / fun / 自定义
+    require = []  # 依赖的其他插件，支持 PEP 440 版本约束（如 "chat>=1.0,<2.0"）
 
     async def on_load(self):
         """插件加载时调用 —— 注册功能"""
@@ -389,9 +385,9 @@ class MyPlugin(PluginBase):
 **`require` 依赖声明**：如果你的插件需要另一个插件先加载，填写它的 `name`。支持 PEP 440 版本约束：
 
 ```python
-require = ["chat"]              # 无版本约束
-require = ["chat>=1.0,<2.0"]    # 依赖 chat 1.x 版本
-require = ["admin>=1.1"]        # 依赖 admin 1.1 及以上
+require = ["chat"]  # 无版本约束
+require = ["chat>=1.0,<2.0"]  # 依赖 chat 1.x 版本
+require = ["admin>=1.1"]  # 依赖 admin 1.1 及以上
 ```
 
 **`category` 分类**：插件分类用于前端分类筛选和 `/help` 命令分组展示：
@@ -407,8 +403,8 @@ require = ["admin>=1.1"]        # 依赖 admin 1.1 及以上
 **插件状态（PluginStatus）**：
 
 ```python
-plugin.status        # PluginStatus.LOADED / DISABLED / ERROR 等
-plugin.enabled       # bool，向后兼容：LOADING/LOADED 为 True
+plugin.status  # PluginStatus.LOADED / DISABLED / ERROR 等
+plugin.enabled  # bool，向后兼容：LOADING/LOADED 为 True
 ```
 
 | 状态 | 值 | 说明 |
@@ -441,9 +437,7 @@ Qingci-Bot 提供了 6 种工厂函数来创建匹配器：
 ```python
 async def on_load(self):
     # 方式1: 插件内注册（推荐，可以访问 self）
-    self.matchers.append(
-        on_command("ping", priority=1)(self._handle_ping)
-    )
+    self.matchers.append(on_command("ping", priority=1)(self._handle_ping))
 
     # 方式2: 模块级装饰器（在类外面写）
     # 见下方「常见场景」章节
@@ -468,15 +462,17 @@ async def on_load(self):
 
 ```python
 from qingci_plugin_sdk import (
-    GroupIncreaseNotice,   # 群成员增加
-    GroupBanNotice,        # 群禁言
-    GroupRequestEvent,     # 加群请求
-    FriendRequestEvent,    # 加好友请求
+    GroupIncreaseNotice,  # 群成员增加
+    GroupBanNotice,  # 群禁言
+    GroupRequestEvent,  # 加群请求
+    FriendRequestEvent,  # 加好友请求
 )
+
 
 @on_notice()
 async def on_group_increase(ctx: MatcherContext, event: GroupIncreaseNotice) -> str:
     return f"欢迎 {event.user_id}（由 {event.operator_id} 操作）入群 {event.group_id}"
+
 
 @on_request()
 async def on_group_request(ctx: MatcherContext, event: GroupRequestEvent) -> bool:
@@ -592,39 +588,39 @@ handler 函数接收的 `ctx` 参数包含了当前消息的所有信息：
 ```python
 async def handler(ctx: MatcherContext) -> str:
     # 发送者信息
-    ctx.user_id        # 发送者 QQ 号 (int)
-    ctx.sender_name    # 发送者昵称 (str)
-    ctx.group_id       # 群号，私聊时为 0 (int)
+    ctx.user_id  # 发送者 QQ 号 (int)
+    ctx.sender_name  # 发送者昵称 (str)
+    ctx.group_id  # 群号，私聊时为 0 (int)
 
     # 消息内容
-    ctx.plain_text     # 纯文本消息 (str)
-    ctx.raw_message    # 原始消息（含 CQ 码）(str)
-    ctx.images         # 图片 URL 列表 (list[str])
+    ctx.plain_text  # 纯文本消息 (str)
+    ctx.raw_message  # 原始消息（含 CQ 码）(str)
+    ctx.images  # 图片 URL 列表 (list[str])
 
     # 命令解析（由 command/startswith 规则自动填充）
-    ctx.command        # 匹配到的命令名 (str)
-    ctx.args           # 命令参数 (str)
+    ctx.command  # 匹配到的命令名 (str)
+    ctx.args  # 命令参数 (str)
 
     # 正则匹配（由 regex 规则自动填充）
-    ctx.match          # re.Match 对象
+    ctx.match  # re.Match 对象
 
     # 状态
-    ctx.is_at_bot      # 是否 @ 了机器人 (bool)
-    ctx.message_type   # "group" 或 "private" (str)
+    ctx.is_at_bot  # 是否 @ 了机器人 (bool)
+    ctx.message_type  # "group" 或 "private" (str)
 
     # 来源平台（多平台适配器，由框架在事件入口注入）
-    ctx.platform       # 来源平台标识："onebot" / "telegram" / ...（默认 "onebot"）
+    ctx.platform  # 来源平台标识："onebot" / "telegram" / ...（默认 "onebot"）
 
     # 原始事件
-    ctx.raw_event      # OneBot 原始事件 dict
+    ctx.raw_event  # OneBot 原始事件 dict
 
     # 框架引用
-    ctx.bot            # Bot 实例
-    ctx.plugin         # 当前插件实例
-    ctx.matcher        # 当前匹配器实例
+    ctx.bot  # Bot 实例
+    ctx.plugin  # 当前插件实例
+    ctx.matcher  # 当前匹配器实例
 
     # 会话阶梯（多轮交互）
-    ctx.session        # Session 对象：pause/finish/reject/send 控制多轮流程
+    ctx.session  # Session 对象：pause/finish/reject/send 控制多轮流程
 ```
 
 ### 会话阶梯（多轮交互）
@@ -634,12 +630,13 @@ async def handler(ctx: MatcherContext) -> str:
 ```python
 from qingci_plugin_sdk import PauseException, RejectException
 
+
 @on_command("wizard")
 async def wizard(ctx: MatcherContext):
     step = getattr(ctx.session, "step", "ask_name")
     if step == "ask_name":
-        ctx.session.step = "ask_age"                      # 跨轮状态
-        await ctx.session.pause("请输入你的名字：")          # 挂起，等待下一条消息
+        ctx.session.step = "ask_age"  # 跨轮状态
+        await ctx.session.pause("请输入你的名字：")  # 挂起，等待下一条消息
 
     if step == "ask_age":
         ctx.session.name = ctx.plain_text
@@ -722,6 +719,7 @@ async def _handle_register(self, ctx: MatcherContext) -> str:
 ```python
 from qingci_plugin_sdk import PluginBase
 
+
 class MyPlugin(PluginBase):
     name = "my_plugin"
     # 声明类型注解后，框架自动注入
@@ -737,6 +735,7 @@ class MyPlugin(PluginBase):
 ```python
 from pydantic import BaseModel
 from qingci_plugin_sdk import PluginBase
+
 
 class MyPlugin(PluginBase):
     name = "my_plugin"
@@ -766,13 +765,16 @@ plugins:
 # 提供方
 class ChatPlugin(PluginBase):
     name = "chat"
+
     async def on_load(self):
         self.export("get_history", self.get_history)
+
 
 # 消费方
 class MyPlugin(PluginBase):
     name = "my_plugin"
     require = ["chat"]
+
     async def on_load(self):
         chat = self.get_exports("chat")
         history = await chat["get_history"](user_id=123)
@@ -789,8 +791,8 @@ class MyPlugin(PluginBase):
     name = "my_plugin"
 
     async def on_load(self):
-        self.register_before(self._before)   # 前置钩子
-        self.register_after(self._after)     # 后置钩子
+        self.register_before(self._before)  # 前置钩子
+        self.register_after(self._after)  # 后置钩子
 
     async def _before(self, matcher, ctx):
         return None  # None = 不拦截
@@ -861,7 +863,6 @@ from qingci_plugin_sdk import (
     PluginStatus,
     MessageContext,
     MatcherContext,
-
     # 匹配器工厂
     Matcher,
     on_message,
@@ -870,7 +871,6 @@ from qingci_plugin_sdk import (
     on_keyword,
     on_notice,
     on_request,
-
     # 权限
     Permission,
     EVERYONE,
@@ -882,7 +882,6 @@ from qingci_plugin_sdk import (
     USER,
     GROUP_MEMBER,
     describe_permission,
-
     # 规则
     Rule,
     startswith,
@@ -897,13 +896,10 @@ from qingci_plugin_sdk import (
     is_group,
     keyword,
     rate_limit,
-
     # 限流
     RateLimiter,
-
     # i18n 国际化
     I18n,
-
     # LLM 工具声明
     llm_tool,
     LlmToolSpec,
@@ -919,13 +915,18 @@ from qingci_plugin_sdk import (
 on_command("help", aliases=("帮助", "h"))(handler)
 
 # 子指令：/admin ban user 路由到 ban_handler
-on_command("admin", subcommands={
-    "ban": ban_handler,
-    "unban": unban_handler,
-})(admin_handler)
+on_command(
+    "admin",
+    subcommands={
+        "ban": ban_handler,
+        "unban": unban_handler,
+    },
+)(admin_handler)
 
 # 类型化参数：/weather Beijing 3 -> city="Beijing", days=3（注入 handler 形参）
 on_command("weather", args_schema={"city": str, "days": int})
+
+
 async def weather(ctx, city: str = "", days: int = 1) -> str:
     return f"{city}: {days} 天预报"
 ```
@@ -936,11 +937,11 @@ async def weather(ctx, city: str = "", days: int = 1) -> str:
 
 ```python
 class MyPlugin(PluginBase):
-    async def on_startup(self):        # 启动完成（所有插件加载后）
+    async def on_startup(self):  # 启动完成（所有插件加载后）
         ...
-    async def on_shutdown(self):       # 停止时（on_unload 之前）
+    async def on_shutdown(self):  # 停止时（on_unload 之前）
         ...
-    async def on_bot_connect(self):    # QQ 会话连接/重连
+    async def on_bot_connect(self):  # QQ 会话连接/重连
         ...
     async def on_metaevent(self, event: dict) -> bool | None:  # 元事件，返回 True 表示已消费
         ...
@@ -956,7 +957,7 @@ class MyPlugin(PluginBase):
 ```
 
 ```python
-self._("hello", name="世界")   # -> "你好，世界"
+self._("hello", name="世界")  # -> "你好，世界"
 ```
 
 #### LLM 工具声明（1.4.0）
@@ -966,6 +967,7 @@ PluginManager 加载时自动收集）：
 
 ```python
 from qingci_plugin_sdk import llm_tool
+
 
 @llm_tool(name="get_time", description="获取当前时间")
 async def get_time() -> str:
@@ -1071,9 +1073,9 @@ async def on_load(self):
 async def _handle_ai(self, ctx: MatcherContext) -> str:
     # 简单调用
     reply = await self.llm.chat(
-        user_id=ctx.user_id,        # 用户标识（用于会话隔离）
-        group_id=ctx.group_id,      # 群标识（私聊为 0）
-        message=ctx.args,           # 用户输入
+        user_id=ctx.user_id,  # 用户标识（用于会话隔离）
+        group_id=ctx.group_id,  # 群标识（私聊为 0）
+        message=ctx.args,  # 用户输入
         system_prompt="你是一个助人为乐的助手",  # 可选，覆盖系统提示词
     )
     return reply
@@ -1108,18 +1110,12 @@ async def on_load(self):
 
 async def _hourly_task(self):
     """每小时执行的任务"""
-    await self.connection.send_group_msg(
-        group_id=123456,
-        message="整点报时！"
-    )
+    await self.connection.send_group_msg(group_id=123456, message="整点报时！")
 
 
 async def _daily_task(self):
     """每天 8:00 执行的任务"""
-    await self.connection.send_group_msg(
-        group_id=123456,
-        message="早上好！新的一天开始了。"
-    )
+    await self.connection.send_group_msg(group_id=123456, message="早上好！新的一天开始了。")
 ```
 
 > **重要**：`self.scheduler` 可能为 `None`（如果主项目未启用调度器），使用前务必判空。
@@ -1150,6 +1146,7 @@ async def on_load(self):
 async def _tool_get_time(self, timezone_offset: int = 8) -> str:
     """LLM 可调用的工具"""
     from datetime import datetime, timezone, timedelta
+
     tz = timezone(timedelta(hours=timezone_offset))
     return datetime.now(tz).strftime("%Y-%m-%d %H:%M:%S")
 ```
@@ -1174,6 +1171,7 @@ self.matchers.append(
 
 ```python
 from qingci_plugin_sdk import on_command, MatcherContext
+
 
 @on_command("status", description="查看状态")
 async def status_handler(ctx: MatcherContext) -> str:
