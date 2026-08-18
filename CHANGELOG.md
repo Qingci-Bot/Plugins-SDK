@@ -4,6 +4,18 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [Unreleased]
+
+### Added
+
+- **OneBot 12 消息段抽象（`segments.py`）**：新增 `SegmentType` 常量、`MessageSegment` 工厂（`text`/`mention`/`mention_all`/`image`/`voice`/`audio`/`video`/`file`/`reply`/`location`）、`Message` 容器（纯文本提取/双模嗅探），以及 v11↔v12 段双向转换（`normalize_v11_segment`/`to_v11_segment`/`segments_to_v11`/`segments_to_v12`），为 OneBot 12 内核迁移提供统一消息表达。
+- **v12 事件解析**：`parse_event` / `parse_notice_event` / `parse_request_event` 同时接受 v11（`notice_type`）与 v12（`detail_type`）事件 dict，v12 `detail_type` 自动映射回 v11 命名空间，插件侧事件类保持不变。
+
+### Changed
+
+- **权限函数支持字符串 ID**：`USER` / `GROUP_MEMBER` 参数类型由 `int` 放宽为 `int | str | list[int | str]`，内部归一化为字符串比较（OneBot 12 事件中 `user_id`/`group_id` 均为字符串，原实现仅接受 `int` 导致 Telegram 等平台权限匹配失败）；context 侧同样转字符串，保证跨平台 ID 语义一致。
+- **`Message.from_raw` 修复 v12 reply 段误归一化**：reply 段在 v11（`data.id`）与 v12（`data.message_id`）语义不同，现改为仅 `at`/`at_all`/`record`/`face`/`forward` 强制 v11 嗅探，reply 按字段判别（含 `id` 且无 `message_id` 才视为 v11）。
+
 ## [1.6.0] - 2026-08-17
 
 ### Added

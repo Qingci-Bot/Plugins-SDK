@@ -558,13 +558,13 @@ rule = command("admin") & is_private()
 | 权限 | 说明 |
 |------|------|
 | `EVERYONE` | 所有人（默认） |
-| `SUPERUSER` | 超级管理员（唯一，config 中 `bot.super_admin` 的 QQ） |
-| `ADMIN` | 普通管理员（config 中 `bot.admin_users` 列表里的 QQ；超级管理员自动继承） |
+| `SUPERUSER` | 超级管理员（唯一，config 中 `bot.super_admin` 的平台无关用户 ID） |
+| `ADMIN` | 普通管理员（config 中 `bot.admin_users` 列表里的平台无关用户 ID；超级管理员自动继承） |
 | `PRIVATE` | 仅限私聊 |
 | `GROUP` | 仅限群聊 |
 | `MEMBER` | 普通群员（与 EVERYONE 等价） |
-| `USER(qq)` | 指定 QQ 用户可用 |
-| `GROUP_MEMBER(qq)` | 指定群成员可用 |
+| `USER(id)` | 指定用户可用（ID 支持数字或字符串，如 QQ 号 / Telegram 用户 ID） |
+| `GROUP_MEMBER(id)` | 指定群成员可用 |
 
 **权限组合**：
 
@@ -572,11 +572,11 @@ rule = command("admin") & is_private()
 # 仅管理员私聊
 permission = SUPERUSER & PRIVATE
 
-# 管理员或指定用户
+# 管理员或指定用户（数字/字符串 ID 均可）
 permission = SUPERUSER | USER(123456789)
 
-# 指定用户123456在私聊中
-permission = USER(123456) & PRIVATE
+# 指定用户 123456 在私聊中
+permission = USER("123456") & PRIVATE
 ```
 
 **权限标签（label）：** 每个 `Permission` 带英文标识标签用于展示。内置权限的 label 为其枚举名（`SUPERUSER`/`ADMIN`/`EVERYONE` 等），组合权限自动生成组合标签（如 `(SUPERUSER & PRIVATE)`）。用 `describe_permission(perm)` 获取任意权限的标签；未标注的自定义权限返回 `CUSTOM`。主项目 Web 命令管理界面再将标签映射为中文（超级管理员/管理员/所有人等）。
