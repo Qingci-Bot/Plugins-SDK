@@ -25,9 +25,12 @@ from .events import (
     NoticeEvent,
     PokeNotice,
     RequestEvent,
+    detail_type_to_notice_type,
+    notice_type_to_detail_type,
     parse_event,
     parse_notice_event,
     parse_request_event,
+    parse_v12_event,
 )
 from .i18n import I18n
 from .llm_tool import LlmToolSpec, llm_tool
@@ -71,6 +74,15 @@ from .rule import (
     subcommand,
     to_me,
 )
+from .segments import (
+    Message,
+    MessageSegment,
+    SegmentType,
+    normalize_v11_segment,
+    segments_to_v11,
+    segments_to_v12,
+    to_v11_segment,
+)
 from .session import FinishException, PauseException, RejectException, Session
 
 __all__ = [
@@ -99,6 +111,17 @@ __all__ = [
     "parse_event",
     "parse_notice_event",
     "parse_request_event",
+    "parse_v12_event",
+    "detail_type_to_notice_type",
+    "notice_type_to_detail_type",
+    # 消息段
+    "SegmentType",
+    "MessageSegment",
+    "Message",
+    "normalize_v11_segment",
+    "to_v11_segment",
+    "segments_to_v11",
+    "segments_to_v12",
     # LLM 工具
     "LlmToolSpec",
     "llm_tool",
