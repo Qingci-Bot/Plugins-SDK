@@ -245,12 +245,25 @@ class Message:
         if isinstance(message, (list, tuple)):
             segments = list(message)
             if segments and all(isinstance(s, dict) for s in segments):
-                # 嗅探 v11/v12：存在 at/record/at_all 等 v11 专属段类型即按 v11 归一化
-                v11_types = {"at", "at_all", "record", "face", "forward", "reply"}
-                if any(isinstance(s.get("type"), str) and s["type"] in v11_types for s in segments):
+                if any(cls._looks_v11(s) for s in segments):
                     return cls(segments_to_v12(segments))
                 return cls(segments)
         return cls()
+
+    @staticmethod
+    def _looks_v11(seg: dict[str, Any]) -> bool:
+        """判断单段是否为 v11 格式（供 from_raw 嗅探）
+
+        - at / at_all / record / face / forward 为 v11 专属段类型
+        - reply 在 v11/v12 均存在：v11 用 id，v12 用 message_id，依字段判别
+        """
+        seg_type = seg.get("type")
+        if seg_type in ("at", "at_all", "record", "face", "forward"):
+            return True
+        if seg_type == "reply":
+            data = seg.get("data", {})
+            return bool(isinstance(data, dict) and "id" in data and "message_id" not in data)
+        return False
 
 
 # ============ v11 <-> v12 转换 ============

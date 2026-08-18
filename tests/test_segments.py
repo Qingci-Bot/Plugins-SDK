@@ -119,6 +119,16 @@ def test_message_from_raw_variants():
     assert Message.from_raw(v12).as_dicts() == v12
 
 
+def test_message_from_raw_distinguishes_v11_v12_reply():
+    """reply 段在 v11（id）与 v12（message_id）间通过字段判别，避免误归一化"""
+    v11 = [{"type": "reply", "data": {"id": "88"}}]
+    v12 = [{"type": "reply", "data": {"message_id": "88"}}]
+    # v11 归一化为 v12（message_id）
+    assert Message.from_raw(v11).as_dicts() == [{"type": "reply", "data": {"message_id": "88"}}]
+    # v12 原样保留（不应被当作 v11 处理）
+    assert Message.from_raw(v12).as_dicts() == v12
+
+
 # ============ v11 <-> v12 转换 ============
 
 
