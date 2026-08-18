@@ -8,6 +8,7 @@
 
 ### Added
 
+- **`MessageEditedEvent` 类型化事件**：`parse_notice_event` 将 `detail_type=message_edited` 解析为 `MessageEditedEvent`（携带 `message_id`/`alt_message`/`message` 段数组/`is_at_bot`），承载 Telegram 编辑消息扩展事件；解析器字段处理兼容 str/bool 类型（`message_id`/`alt_message`/`is_at_bot` 原样保留，不再强制转 int），未知 `detail_type` 仍安全回退 `NoticeEvent` 基类
 - **OneBot 12 消息段抽象（`segments.py`）**：新增 `SegmentType` 常量、`MessageSegment` 工厂（`text`/`mention`/`mention_all`/`image`/`voice`/`audio`/`video`/`file`/`reply`/`location`）、`Message` 容器（纯文本提取/双模嗅探），以及 v11↔v12 段双向转换（`normalize_v11_segment`/`to_v11_segment`/`segments_to_v11`/`segments_to_v12`），为 OneBot 12 内核迁移提供统一消息表达。
 - **v12 事件解析**：`parse_event` / `parse_notice_event` / `parse_request_event` 同时接受 v11（`notice_type`）与 v12（`detail_type`）事件 dict，v12 `detail_type` 自动映射回 v11 命名空间，插件侧事件类保持不变。
 

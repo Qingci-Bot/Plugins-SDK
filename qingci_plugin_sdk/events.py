@@ -206,6 +206,21 @@ class PokeNotice(NoticeEvent):
     target_id: int = 0  # 被戳用户
 
 
+@dataclass
+class MessageEditedEvent(NoticeEvent):
+    """消息编辑（Telegram 扩展事件，notice_type=message_edited）
+
+    由 Telegram `edited_message` 归一化而来（OneBot 事件模型无等价事件，
+    以扩展 notice 承载）。编辑不触发消息回复，插件用 on_notice() 消费后
+    可读取编辑后的新文本（alt_message）与 v12 段数组（message）。
+    """
+
+    message_id: str = ""  # 被编辑消息 ID（OneBot 12 字符串语义）
+    alt_message: str = ""  # 编辑后的新文本
+    message: list = field(default_factory=list)  # 编辑后的 v12 段数组
+    is_at_bot: bool = False  # 编辑内容是否提及了 Bot
+
+
 _NOTICE_CLASSES: dict[str, tuple[type[NoticeEvent], tuple[str, ...]]] = {
     "group_increase": (GroupIncreaseNotice, ("operator_id",)),
     "group_decrease": (GroupDecreaseNotice, ("operator_id",)),
@@ -216,6 +231,7 @@ _NOTICE_CLASSES: dict[str, tuple[type[NoticeEvent], tuple[str, ...]]] = {
     "friend_add": (FriendAddNotice, ()),
     "group_upload": (GroupUploadNotice, ("file",)),
     "poke": (PokeNotice, ("target_id",)),
+    "message_edited": (MessageEditedEvent, ("message_id", "alt_message", "message", "is_at_bot")),
 }
 
 
@@ -269,6 +285,10 @@ def parse_notice_event(raw: dict) -> NoticeEvent:
             kwargs[name] = dict(value) if isinstance(value, dict) else {}
         elif isinstance(value, (dict, list)):
             kwargs[name] = value
+        elif isinstance(value, str):
+            kwargs[name] = _str(value)  # str 字段（如 message_id/alt_message）原样保留
+        elif isinstance(value, bool):
+            kwargs[name] = bool(value)  # bool 字段（如 is_at_bot）原样保留
         else:
             kwargs[name] = _int(value)
     return cls(**kwargs)  # type: ignore[arg-type]  # kwargs 值已按字段类型化

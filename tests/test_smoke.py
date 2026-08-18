@@ -11,6 +11,7 @@ from qingci_plugin_sdk import (
     GroupIncreaseNotice,
     I18n,
     MessageContext,
+    MessageEditedEvent,
     PluginBase,
     PluginStatus,
     llm_tool,
@@ -109,6 +110,44 @@ def test_parse_event_router():
     ev = parse_event("notice", raw)
     assert isinstance(ev, GroupIncreaseNotice)
     assert parse_event("meta", raw) is None  # 未知类型返回 None
+
+
+def test_parse_message_edited_event():
+    """v12 message_edited → MessageEditedEvent（str/bool 字段类型化保留）"""
+    raw = {
+        "type": "notice",
+        "detail_type": "message_edited",
+        "sub_type": "friend",
+        "id": "evt-7",
+        "impl": "telegram",
+        "platform": "telegram",
+        "self_id": "30001",
+        "time": 1786889000,
+        "user_id": "10001",
+        "group_id": "",
+        "message_id": "42",
+        "alt_message": "改后的内容",
+        "message": [{"type": "text", "data": {"text": "改后的内容"}}],
+        "is_at_bot": False,
+    }
+    ev = parse_notice_event(raw)
+    assert isinstance(ev, MessageEditedEvent)
+    assert ev.notice_type == "message_edited"
+    assert ev.detail_type == "message_edited"
+    assert ev.user_id == 10001
+    assert ev.message_id == "42"  # str 字段原样保留（非 int）
+    assert ev.alt_message == "改后的内容"
+    assert ev.message[0]["type"] == "text"
+    assert ev.is_at_bot is False  # bool 字段原样保留
+    assert ev.platform == "telegram"
+
+
+def test_parse_unknown_notice_falls_back_to_base():
+    """未知 detail_type 仍回退 NoticeEvent 基类（不抛异常）"""
+    raw = {"type": "notice", "detail_type": "group_message_react", "user_id": 1}
+    ev = parse_notice_event(raw)
+    assert type(ev).__name__ == "NoticeEvent"
+    assert ev.notice_type == "group_message_react"  # 未知类型原样映射
 
 
 def test_i18n_translate():
