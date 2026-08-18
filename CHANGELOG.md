@@ -4,7 +4,7 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
-## [Unreleased]
+## [1.8.0] - 2026-08-18（与 Qingci-Bot-CE 1.8.0 同步）
 
 ### Added
 

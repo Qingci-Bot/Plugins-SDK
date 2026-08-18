@@ -1,6 +1,6 @@
 [project]
 name = "qingci-plugin-sdk"
-version = "1.6.0"
+version = "1.8.0"
 description = "Qingci-Bot 插件 SDK — 独立可安装的插件开发工具包"
 requires-python = ">=3.10"
 license = "GPL-3.0-or-later"
