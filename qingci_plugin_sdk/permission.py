@@ -134,21 +134,35 @@ MEMBER = Permission(lambda bot, event, ctx: True, label="MEMBER")
 """普通群员（与 EVERYONE 等价但独立实例）"""
 
 
-def USER(user_ids: int | list[int]) -> Permission:
+def _to_id_str(ids) -> list[str]:
+    """把 int / str / 序列统一归一为字符串 ID 列表
+
+    OneBot 12 事件里 user_id / group_id 均为字符串；传入数字（QQ 号等）
+    会自动转为字符串，保证权限匹配不受平台 ID 类型差异影响。
+    """
+    if isinstance(ids, (int, str)):
+        return [str(ids)]
+    return [str(x) for x in ids]
+
+
+def USER(user_ids: int | str | list[int | str]) -> Permission:
     """指定用户可用"""
-    ids = [user_ids] if isinstance(user_ids, int) else list(user_ids)
-    return Permission(lambda bot, event, ctx: ctx.user_id in ids, label=f"USER({ids})")
+    ids = _to_id_str(user_ids)
+    return Permission(
+        lambda bot, event, ctx: str(ctx.user_id) in ids,
+        label=f"USER({', '.join(ids)})",
+    )
 
 
-def GROUP_MEMBER(group_ids: int | list[int]) -> Permission:
+def GROUP_MEMBER(group_ids: int | str | list[int | str]) -> Permission:
     """指定群的成员可用（仅群聊消息生效）
 
     参数为群号列表；私聊消息一律不匹配。
     """
-    ids = [group_ids] if isinstance(group_ids, int) else list(group_ids)
+    ids = _to_id_str(group_ids)
     return Permission(
-        lambda bot, event, ctx: ctx.message_type == "group" and ctx.group_id in ids,
-        label=f"GROUP_MEMBER({ids})",
+        lambda bot, event, ctx: ctx.message_type == "group" and str(ctx.group_id) in ids,
+        label=f"GROUP_MEMBER({', '.join(ids)})",
     )
 
 
