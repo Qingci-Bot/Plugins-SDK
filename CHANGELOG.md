@@ -4,6 +4,12 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [Unreleased]
+
+### Added
+
+- **`PluginBase.register_api` 插件级 Web API 注册**：插件可在 `on_load` 中注册 HTTP 接口（path / handler / methods / description），由主项目挂载到 `/api/plugin-web/{插件名}/{path}` 并提供鉴权与返回类型归一化（`Response` 原样 / `(data, status)` 二元组 / dict 自动 JSON 序列化）；handler 接收主项目 HTTP 请求对象，支持读取 query / JSON body / 上传文件。配合主项目新增的插件 Web API 机制（见 Qingci-Bot-CE 变更记录）。
+
 ## [1.8.0] - 2026-08-18（与 Qingci-Bot-CE 1.8.0 同步）
 
 ### Added

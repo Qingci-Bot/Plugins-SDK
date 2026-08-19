@@ -52,6 +52,35 @@ def test_plugin_base_instantiation():
     assert p.status == PluginStatus.LOADED
 
 
+def test_register_api_records_registration():
+    """register_api：规范化 path/methods 并写入 _apis（供主项目挂载）"""
+
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    p = DemoPlugin()
+    p.register_api("checkin-ranking", lambda req: {}, methods=["GET"], description="排行")
+    p.register_api("/content-safety/terms/add", lambda req: {}, methods=["post"])
+    p.register_api("raw", lambda req: {})
+
+    assert len(p._apis) == 3
+    first = p._apis[0]
+    assert first["path"] == "checkin-ranking"  # 去除首尾斜杠
+    assert first["methods"] == ["GET"]
+    assert first["description"] == "排行"
+    assert callable(first["handler"])
+    # methods 大小写归一化；缺省为 GET
+    assert p._apis[1]["methods"] == ["POST"]
+    assert p._apis[1]["path"] == "content-safety/terms/add"
+    assert p._apis[2]["methods"] == ["GET"]
+
+
 def test_message_context_basics():
     ctx = MessageContext(
         message_type="group",

@@ -2,6 +2,7 @@
 
 import enum
 from abc import ABC, abstractmethod
+from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, cast
 
@@ -82,6 +83,9 @@ class PluginBase(ABC):
     # Web 管理页面注册
     _pages: list[dict[str, str]]
 
+    # Web API 注册（插件级 HTTP 接口，由主项目挂载到 /api/plugin-web/<name>/）
+    _apis: list[dict[str, Any]]
+
     # 中间件链（per-handler 钩子）
     # before_handler: async (matcher, ctx) -> str | None
     #   - 返回非 None 时拦截，跳过 handler 并将返回值作为回复
@@ -93,6 +97,7 @@ class PluginBase(ABC):
     def __init__(self):
         self._exports = {}
         self._pages = []
+        self._apis = []
         self._before_handlers = []
         self._after_handlers = []
         self._status = PluginStatus.LOADING
@@ -204,6 +209,48 @@ class PluginBase(ABC):
                 "icon": icon,
                 "static_dir": static_dir,
             }
+        )
+
+    def register_api(
+        self,
+        path: str,
+        handler,
+        *,
+        methods: Sequence[str] | None = None,
+        description: str = "",
+    ) -> None:
+        """注册插件 Web API（在 on_load 中调用）
+
+        由主项目挂载到 `/api/plugin-web/<插件名>/<path>`，鉴权对齐主项目
+        API 体系。插件可借此提供 WebUI 管理接口（配合 register_page 的
+        前端页面使用）。
+
+        handler 契约（任意平台实现均按此签名适配）：
+            async def handler(request) -> Response | (data, status) | data
+        - request：框架 HTTP 请求对象（主项目为 FastAPI Request，可读取
+          `request.query_params` / `request.headers`、`await request.json()`
+          取 JSON body、`await request.form()` 取上传文件等）
+        - 返回 Response 对象（如 `JSONResponse` / `FileResponse`）时原样返回；
+          返回 `(data, status_code)` 二元组时按 JSON 序列化并指定状态码；
+          返回 dict / list / str 时自动 JSON 序列化
+
+        Args:
+            path: 相对路径（固定字面路径，不含 {id} 动态段；动态取值经
+                  query 参数传递），如 "checkin-ranking"、"content-safety/terms/add"
+            handler: 处理函数（见上方契约）
+            methods: HTTP 方法列表，默认 ["GET"]
+            description: 接口描述（调试/文档用）
+        """
+        self._apis.append(
+            cast(
+                dict,
+                {
+                    "path": str(path or "").strip("/"),
+                    "handler": handler,
+                    "methods": [str(m).upper() for m in (methods or ["GET"])],
+                    "description": str(description or ""),
+                },
+            )
         )
 
     # ---- 生命周期 ----
