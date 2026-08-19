@@ -32,8 +32,7 @@ Plugins-SDK/
 │   └── paths.py              # 路径解析：app_root 定位 + data_root 覆盖钩子（供 data_dir 重定向）
 ├── plugins/                  # 插件开发/验证环境
 │   ├── __init__.py           # 包标记
-│   ├── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
-│   └── hello/                # 最小示例插件
+│   └── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
 ├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
 ├── pyproject.toml            # 包元数据（name/version）、构建配置、ruff/mypy 配置
 ├── README.md                 # 插件开发指南（面向插作者）
@@ -49,7 +48,7 @@ Plugins-SDK/
 |------|----------|----------|
 | `qingci_plugin_sdk/` | 所有可复用的插件 API（基类/匹配器/规则/权限/i18n/工具） | 具体业务插件、依赖主项目的代码 |
 | `plugins/_template/` | 完整插件模板，供复制后改造 | 可被直接加载的业务逻辑 |
-| `plugins/hello/` | 最小示例插件，演示最简用法 | 复杂功能堆积 |
+| 示例插件（独立仓库） | 最小示例插件存放于独立仓库 [Qingci-Bot/hello](https://github.com/Qingci-Bot/hello)（演示市场「索引仓库」模型） | 复杂功能堆积 |
 | `docs/` | 规范文档 | 运行时产物 |
 
 **依赖方向（强制）：**
@@ -79,7 +78,7 @@ qingci_plugin_sdk/  ──(pip install -e .)──▶  插件（plugins/ 或用�
 | 对象 | 约定 | 示例 |
 |------|------|------|
 | Python 包/模块 | 小写下划线 `snake_case` | `matcher.py`, `llm_tool.py` |
-| 示例插件目录 | 小写单词 | `hello/` |
+| 示例插件仓库 | 小写单词 | `hello` |
 | 插件模板目录 | `_` 前缀（不参与加载） | `_template/` |
 | 规范文档 | `UPPER_SNAKE.md` | `PROJECT_STRUCTURE.md`, `CODING_STANDARDS.md` |
 

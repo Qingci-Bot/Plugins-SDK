@@ -4,6 +4,12 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [Unreleased]
+
+### Changed
+
+- **示例插件 `hello` 迁移至独立仓库 [Qingci-Bot/hello](https://github.com/Qingci-Bot/hello)**：仓库根即插件源码，演示插件市场「索引仓库」模型（市场只登记元数据与 `source` 地址）；`plugins/` 下仅保留 `_template/` 模板，文档同步更新。
+
 ## [1.9.1] - 2026-08-19（与 Qingci-Bot-CE 1.9.1 同步）
 
 ### Changed

@@ -283,11 +283,11 @@ Plugins-SDK/
 │   ├── llm_tool.py          # @llm_tool 插件级 LLM 工具声明
 │   └── paths.py             # app_root 路径解析 + data_root 覆盖钩子（供 data_dir 使用）
 └── plugins/                 # 你的插件源码都放在这里
-    ├── _template/           # 完整开发模板（以 _ 开头，不会被加载）
-    │   └── __init__.py
-    └── hello/               # 最小示例插件
+    └── _template/           # 完整开发模板（以 _ 开头，不会被加载）
         └── __init__.py
 ```
+
+> 最小示例插件已迁移至独立仓库 [Qingci-Bot/hello](https://github.com/Qingci-Bot/hello)（仓库根即插件源码），可在插件市场安装，也可作新仓库模板。
 
 > **提示**：以 `_` 开头的目录不会被 Qingci-Bot 自动加载，所以 `_template/` 放在这里很安全，不会影响运行。
 
