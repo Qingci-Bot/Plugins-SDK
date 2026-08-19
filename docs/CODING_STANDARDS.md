@@ -47,6 +47,7 @@
 ruff check qingci_plugin_sdk plugins   # 静态检查（配置见 pyproject.toml）
 ruff format --check qingci_plugin_sdk plugins   # 格式检查
 mypy qingci_plugin_sdk                # 类型检查（配置见 pyproject.toml）
+pytest                                # SDK 自测（tests/ 目录）
 python -m py_compile qingci_plugin_sdk/*.py   # 语法正确性兜底
 ```
 

@@ -33,6 +33,7 @@
   - [规则 Rule](#规则-rule)
   - [权限 Permission](#权限-permission)
   - [上下文 MatcherContext](#上下文-matchercontext)
+  - [多平台插件开发（QQ / Telegram）](#多平台插件开发qq--telegram)
   - [会话阶梯（多轮交互）](#会话阶梯多轮交互)
   - [依赖注入](#依赖注入)
 - [完整 API 参考](#完整-api-参考)
@@ -44,7 +45,7 @@
   - [插件数据目录](#插件数据目录140)
 - [命令管理](#命令管理)
 - [常见场景](#常见场景)
-  - [发送消息到 QQ](#发送消息到-qq)
+  - [发送消息](#发送消息)
   - [调用大模型](#调用大模型)
   - [定时任务](#定时任务)
   - [Function Calling](#function-calling)
@@ -588,14 +589,14 @@ handler 函数接收的 `ctx` 参数包含了当前消息的所有信息：
 ```python
 async def handler(ctx: MatcherContext) -> str:
     # 发送者信息
-    ctx.user_id  # 发送者 QQ 号 (int)
+    ctx.user_id  # 发送者 ID (str | int，v11 为数字 / v12 为字符串)
     ctx.sender_name  # 发送者昵称 (str)
-    ctx.group_id  # 群号，私聊时为 0 (int)
+    ctx.group_id  # 群号，私聊时为空字符串 (str | int)
 
     # 消息内容
     ctx.plain_text  # 纯文本消息 (str)
-    ctx.raw_message  # 原始消息（含 CQ 码）(str)
-    ctx.images  # 图片 URL 列表 (list[str])
+    ctx.raw_message  # 可读原始文本（v12 下为 alt_message 语义）(str)
+    ctx.images  # 图片 URL/file_id 列表 (list[str])
 
     # 命令解析（由 command/startswith 规则自动填充）
     ctx.command  # 匹配到的命令名 (str)
@@ -621,6 +622,52 @@ async def handler(ctx: MatcherContext) -> str:
 
     # 会话阶梯（多轮交互）
     ctx.session  # Session 对象：pause/finish/reject/send 控制多轮流程
+```
+
+### 多平台插件开发（QQ / Telegram）
+
+内核统一采用 **OneBot 12 事件模型**，QQ（OneBot 11/12 协议端）与 Telegram 的事件在入口由各自适配器归一化为同一套内部事件，因此**插件对来源平台完全无感知**——同一份插件代码在 QQ 和 Telegram 实例上零改动即可运行，无需任何平台分支。
+
+**为什么一样：**
+
+- 插件 API 一致：`PluginBase` / `Matcher` / `Permission` / `Rule` / `MessageContext` 与平台无关
+- 事件模型一致：`type` / `detail_type` / `{type, data}` 消息段，媒体以 `file_id` 引用
+- 发送一致：`send_msg` / `send_group_msg` / `send_private_msg` 接受 v12 段数组，回复按 `ctx.platform` 自动路由回对应适配器
+- 权限一致：`super_admin` / `admin_users` 等以平台无关字符串 ID 配置
+
+**平台差异对照：**
+
+| 维度 | QQ（OneBot 11/12） | Telegram |
+|------|--------------------|----------|
+| 标准 notice 事件 | 完整（撤回/禁言/poke/好友添加/上传等） | 仅成员进出群、管理员变更被归一化 |
+| 平台特有扩展事件 | 无 | `message_edited` / `callback_query` / `message_reaction`（用 `on_notice()` 消费） |
+| 群聊触发 | 默认直接响应 | 需 `@Bot` 提及（at 触发模式），私聊天然放行 |
+| 媒体段映射 | `face`/`record` 等 QQ 段 | `photo→image`、`voice→voice`、`video→video` |
+| 回调按钮 | 无 | `callback_query` 需 `call_api("answer_callback_query")` 应答 |
+| 发送者字段 | `nickname`/`card` | `first_name`/`username` |
+
+**Telegram 特有扩展事件**（QQ 无对应事件，均以扩展 notice `detail_type` 承载，插件用 `on_notice()` 消费）：
+
+| detail_type | 说明 | SDK 类型化事件 |
+|-------------|------|----------------|
+| `message_edited` | 消息被编辑（携带新文本 `alt_message` 与 v12 段数组，不触发消息回复） | `MessageEditedEvent` |
+| `callback_query` | 内联按钮回调（携带 `data` / `callback_query_id`，可 `call_api("answer_callback_query")` 应答） | `NoticeEvent` |
+| `message_reaction` | 消息表情反应（新/旧表情列表，`sub_type` 区分 add/remove/change） | `NoticeEvent` |
+
+**实践建议：**
+
+- 写**通用插件**时只依赖 v12 标准事件与消息段，QQ / Telegram 直接通用
+- 只有做平台特有功能（如监听消息编辑、内联按钮回调）时才用扩展事件，并建议用 `ctx.platform` 判断来源，避免在 QQ 上误触发：
+
+```python
+from qingci_plugin_sdk import on_notice, MatcherContext, MessageEditedEvent
+
+
+@on_notice()
+async def on_edited(ctx: MatcherContext, event: MessageEditedEvent) -> str | None:
+    if ctx.platform != "telegram":
+        return None  # 仅 Telegram 有消息编辑事件
+    return f"你刚刚把消息改成了：{event.alt_message}"
 ```
 
 ### 会话阶梯（多轮交互）
@@ -677,6 +724,7 @@ async def wizard(ctx: MatcherContext):
 | `self.tool_registry` | ToolRegistry | Function Calling | 未启用时 |
 | `self.knowledge_store` | KnowledgeStore | 知识库检索 | 未启用时 |
 | `self.session_state` | SessionStateManager | 会话状态（TTL 键值存储） | 不会 |
+| `self.event_bus` | EventBus | 跨插件事件总线（发布-订阅） | 不会 |
 
 ### 会话状态（SessionState / TTL 键值存储）
 
@@ -988,12 +1036,12 @@ async def get_time() -> str:
 
 | 函数 | 签名 | 匹配条件 |
 |------|------|---------|
-| `startswith` | `(prefix: str \| tuple)` | 消息以 prefix 开头 |
-| `endswith` | `(suffix: str \| tuple)` | 消息以 suffix 结尾 |
-| `fullmatch` | `(text: str \| tuple)` | 消息完全等于 text |
+| `startswith` | `(prefix: str \| tuple[str, ...])` | 消息以 prefix 开头 |
+| `endswith` | `(suffix: str \| tuple[str, ...])` | 消息以 suffix 结尾 |
+| `fullmatch` | `(text: str \| tuple[str, ...])` | 消息完全等于 text |
 | `contains` | `(keyword: str)` | 消息包含 keyword |
 | `keyword` | `(*kws: str)` | 消息包含关键词（词边界） |
-| `regex` | `(pattern, flags=0)` | 正则匹配 |
+| `regex` | `(pattern: str \| re.Pattern, flags=0)` | 正则匹配 |
 | `command` | `(cmd: str \| tuple)` | 命令匹配 |
 | `subcommand` | `(parent: str, sub: str)` | 子指令匹配 |
 | `to_me` | `()` | @ 机器人或私聊 |
@@ -1047,9 +1095,9 @@ async def get_time() -> str:
 
 ## 常见场景
 
-### 发送消息到 QQ
+### 发送消息
 
-通过 `self.connection` 可以在任意地方主动发送消息：
+通过 `self.connection` 可以在任意地方主动发送消息（QQ 与 Telegram 通用，回复自动路由回来源平台）：
 
 ```python
 async def on_load(self):
@@ -1063,7 +1111,7 @@ async def on_load(self):
     await self.connection.send_msg("group", 987654321, "通用消息")
 ```
 
-> **注意**：`self.connection` 只有在 Bot 连接了 LLBot 后才能发送消息。在 handler 里直接 `return "..."` 更简单，推荐优先使用。
+> **注意**：`self.connection` 只有在 Bot 连接了对应平台适配器（如 QQ 的 LLBot / Telegram Bot）后才能发送消息。在 handler 里直接 `return "..."` 更简单，推荐优先使用。
 
 ### 调用大模型
 
@@ -1223,6 +1271,8 @@ A: 在代码里加 `logger.info(...)` 打印日志，然后在 Qingci-Bot 的 We
 ### Q: 可以导入第三方库吗？
 
 A: 可以。在插件目录放置 `requirements.txt`（或在 `plugin.json` 的 `requirements` 字段）声明依赖，主项目加载插件时会自动安装到实例隔离目录（`data_root()/deps/`）并注入 `sys.path`，插件内可直接 `import`。该自动安装由主项目 `config.yaml` 的 `bot.auto_install_plugin_deps` 控制（默认开启，可关闭以降低供给链风险）。建议尽量使用 SDK 提供的能力，减少外部依赖。
+
+> 注意区分：`requirements` 声明 **Python 包依赖**（自动安装）；类属性 `require` 声明**插件间依赖**（加载顺序与版本约束），两者不同。
 
 ### Q: 模板目录 `_template/` 会被加载吗？
 
