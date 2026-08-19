@@ -4,6 +4,12 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [Unreleased]
+
+### Changed
+
+- **文档同步（主项目结构重构）**：协议层归属描述对齐主项目 `Qingci-Bot-CE` 的新结构——薄转发位于 `bot/plugin/protocol/` 子包，`bot/plugin/` 顶层同名文件为兼容再导出（README / docs/PROJECT_STRUCTURE / docs/CODING_STANDARDS 同步）。
+
 ## [1.9.0] - 2026-08-19（与 Qingci-Bot-CE 1.9.0 同步）
 
 ### Added

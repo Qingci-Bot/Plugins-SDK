@@ -7,7 +7,7 @@
 ## 1. 核心原则
 
 - **自包含**：SDK 不得 `import bot.*`（主项目）或任何运行时外部服务，保证 `pip install -e .` 后即可独立使用。
-- **协议层唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext`/`RateLimiter` 等协议定义只存在于本仓库；主项目 `bot/plugin/` 为薄转发。协议行为变更（权限语义、匹配规则、基类方法）在本仓库完成，不得改主项目副本。
+- **协议层唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext`/`RateLimiter` 等协议定义只存在于本仓库；主项目 `bot/plugin/protocol/` 为薄转发（`bot/plugin/` 顶层同名文件为兼容再导出）。协议行为变更（权限语义、匹配规则、基类方法）在本仓库完成，不得改主项目副本。
 - **轻量**：SDK 只暴露插件开发所需 API，不承担主项目框架逻辑（调度、连接、持久化由主项目负责）。
 - **零/极简依赖**：`pyproject.toml` 的 `dependencies` 保持为空或尽量少，插件开发者不应为装 SDK 引入一堆传递依赖。
 - **向后兼容**：公开 API（`__all__`）变更需谨慎，破坏性改动必须同步 `CHANGELOG.md` 并提示迁移。
@@ -37,7 +37,7 @@
 
 - 所有希望插件使用的符号，必须在 `qingci_plugin_sdk/__init__.py` 中导出并加入 `__all__`。
 - 工厂函数（`on_command` 等）返回装饰器，装饰器接收 handler 返回 `Matcher`——保持这一稳定的调用形态。
-- 新增能力若与主项目 `bot/plugin/` 对齐，签名与行为应保持一致；协议变更先在 SDK 发布，主项目通过 git 依赖版本锁定同步。
+- 新增能力若与主项目 `bot/plugin/protocol/` 对齐，签名与行为应保持一致；协议变更先在 SDK 发布，主项目通过 git 依赖版本锁定同步。
 - 生命周期钩子在 `PluginBase` 上提供**默认空实现**（`on_startup`/`on_shutdown`/`on_bot_connect`/`on_metaevent`），插件按需覆写，框架无需判空。
 
 ## 5. 提交前检查

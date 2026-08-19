@@ -8,7 +8,7 @@
 
 独立于主项目的插件开发环境，包含完整的 SDK 和模板。你只需要一台电脑、一个代码编辑器，就可以开始开发插件。
 
-本仓库是**插件协议层的唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext` 等协议定义在这里维护，主项目 `Qingci-Bot-CE` 的 `bot/plugin/` 为薄转发，内置插件与外部插件共用同一套 API。
+本仓库是**插件协议层的唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext` 等协议定义在这里维护，主项目 `Qingci-Bot-CE` 的 `bot/plugin/protocol/` 为薄转发（`bot/plugin/` 顶层同名文件为兼容再导出），内置插件与外部插件共用同一套 API。
 
 > 主项目：[Qingci-Bot-CE](https://github.com/Qingci-Bot/Qingci-Bot-CE) — 基于 Python 的 QQ 机器人框架
 
