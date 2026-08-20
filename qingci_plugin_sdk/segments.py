@@ -81,7 +81,8 @@ def parse_cq_string(text: str) -> list[dict[str, Any]]:
             data = {"message_id": data.get("id", "")}
         elif v12_type == SegmentType.IMAGE:
             data = {"file_id": data.get("file", "")}
-        elif v12_type in (SegmentType.FACE, SegmentType.VOICE, SegmentType.VIDEO):
+        elif v12_type in ("face", SegmentType.VOICE, SegmentType.VIDEO):
+            # face 是 v11 专属段类型（v12 无标准 face 段），保留类型名透传
             data = {"file_id": data.get("file", "") or data.get("id", "")}
         elif v12_type == SegmentType.TEXT:
             data = {"text": data.get("text", "")}
