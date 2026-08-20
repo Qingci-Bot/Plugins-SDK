@@ -81,7 +81,9 @@ def _str(value, default: str = "") -> str:
 _V12_TO_V11_NOTICE: dict[str, str] = {
     "private_message_delete": "friend_recall",
     "friend_increase": "friend_add",
-    "friend_decrease": "friend_recall",  # v11 无直接对应，归入 friend_recall 命名空间
+    # friend_decrease（好友减少）在 v11 无对应通知类型：
+    # 不映射，避免归入 friend_recall（消息撤回）命名空间导致监听
+    # 撤回事件的插件收到错误的"好友删除"语义通知
     "group_member_increase": "group_increase",
     "group_member_decrease": "group_decrease",
     "group_message_delete": "group_recall",

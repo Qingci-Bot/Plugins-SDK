@@ -22,6 +22,7 @@ file_id 引用。本模块提供：
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -29,11 +30,66 @@ __all__ = [
     "SegmentType",
     "MessageSegment",
     "Message",
+    "parse_cq_string",
     "normalize_v11_segment",
     "to_v11_segment",
     "segments_to_v12",
     "segments_to_v11",
 ]
+
+
+# v11 CQ 码正则与段类型映射（OneBot 11 字符串消息专用）
+_CQ_RE = re.compile(r"\[CQ:([a-zA-Z0-9_]+)((?:,[a-zA-Z0-9_]+=[^,\]]*)*)\]")
+_CQ_TYPE_TO_V12: dict[str, str] = {
+    "at": "mention",
+    "face": "face",
+    "image": "image",
+    "record": "voice",
+    "video": "video",
+    "reply": "reply",
+    "forward": "forward",
+}
+
+
+def parse_cq_string(text: str) -> list[dict[str, Any]]:
+    """把含 CQ 码的 v11 字符串消息解析为 v12 段数组（纯文本保持 text 段）
+
+    供 Message.from_raw 使用：字符串含 ``[CQ:at,qq=1]`` 等 CQ 码时若不解析，
+    会被整体包成 text 段，导致 @ 识别（is_at_bot / at_list）失真。
+    """
+    segments: list[dict[str, Any]] = []
+    pos = 0
+    for m in _CQ_RE.finditer(text):
+        if m.start() > pos:
+            segments.append({"type": SegmentType.TEXT, "data": {"text": text[pos : m.start()]}})
+        cq_type = m.group(1)
+        data: dict[str, str] = {}
+        raw_kvs = m.group(2)
+        if raw_kvs:
+            for kv in raw_kvs.lstrip(",").split(","):
+                key, _, value = kv.partition("=")
+                data[key.strip()] = value
+        v12_type = _CQ_TYPE_TO_V12.get(cq_type, cq_type)
+        if v12_type == "mention":
+            if data.get("qq") in ("all", "0", ""):
+                v12_type = SegmentType.MENTION_ALL
+                data = {}
+            else:
+                data = {"user_id": data.get("qq", "")}
+        elif v12_type == "reply":
+            # v11 reply 用 data.id，v12 用 data.message_id
+            data = {"message_id": data.get("id", "")}
+        elif v12_type == SegmentType.IMAGE:
+            data = {"file_id": data.get("file", "")}
+        elif v12_type in (SegmentType.FACE, SegmentType.VOICE, SegmentType.VIDEO):
+            data = {"file_id": data.get("file", "") or data.get("id", "")}
+        elif v12_type == SegmentType.TEXT:
+            data = {"text": data.get("text", "")}
+        segments.append({"type": v12_type, "data": data})
+        pos = m.end()
+    if pos < len(text):
+        segments.append({"type": SegmentType.TEXT, "data": {"text": text[pos:]}})
+    return segments
 
 
 # ============ 段类型常量 ============
@@ -241,6 +297,9 @@ class Message:
         if isinstance(message, Message):
             return cls(message.as_dicts())
         if isinstance(message, str):
+            # 含 CQ 码的 v11 字符串消息解析为段数组（否则 @ 识别失真）
+            if "CQ:" in message:
+                return cls(parse_cq_string(message))
             return cls([MessageSegment.text(message)])
         if isinstance(message, (list, tuple)):
             segments = list(message)

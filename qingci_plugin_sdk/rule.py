@@ -12,6 +12,21 @@ from .context import MessageContext
 logger = logging.getLogger("qingci-bot.rule")
 
 
+def _restore_ctx(ctx, backup: dict) -> None:
+    """把 ctx 的属性还原到 backup 快照（含删除左侧 checker 新增的属性）"""
+    if not hasattr(ctx, "__dict__"):
+        return
+    current = vars(ctx)
+    for k in list(current):
+        if k not in backup:
+            try:
+                delattr(ctx, k)
+            except AttributeError:
+                pass
+    for k, v in backup.items():
+        setattr(ctx, k, v)
+
+
 class Rule:
     """规则对象，支持 & | ~ 组合"""
 
@@ -43,20 +58,18 @@ class Rule:
         right = other
 
         async def combined_check(bot, event, ctx) -> bool:
-            fields = ("command", "args", "match")
-            backup = {f: getattr(ctx, f, None) for f in fields}
+            # 备份 ctx 全部属性：左侧 checker 可能修改 command/subcommand 等
+            # 任意字段，左侧不通过时需完整还原，避免污染右侧判定
+            backup = dict(vars(ctx)) if hasattr(ctx, "__dict__") else {}
             try:
                 result = await left.check(bot, event, ctx)
                 if result:
                     return True
-                for f in fields:
-                    if hasattr(ctx, f):
-                        setattr(ctx, f, backup[f])
             except Exception:
-                for f in fields:
-                    if hasattr(ctx, f):
-                        setattr(ctx, f, backup[f])
+                _restore_ctx(ctx, backup)
                 return False
+            # 左侧未通过：恢复被修改的字段后再跑右侧
+            _restore_ctx(ctx, backup)
             try:
                 return await right.check(bot, event, ctx)
             except Exception:

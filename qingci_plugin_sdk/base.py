@@ -193,6 +193,7 @@ class PluginBase(ABC):
             module_file = getattr(type(self), "__module__", None)
             if module_file:
                 import importlib
+                import logging
 
                 try:
                     mod = importlib.import_module(module_file)
@@ -201,8 +202,11 @@ class PluginBase(ABC):
                         candidate = os.path.join(os.path.dirname(mod_path), "web")
                         if os.path.isdir(candidate):
                             static_dir = candidate
-                except Exception:
-                    pass
+                except Exception as e:
+                    # 探测失败记录日志，避免静默吞异常导致页面注册无 web/ 目录
+                    logging.getLogger("qingci-bot.sdk").debug(
+                        f"插件 web/ 目录探测失败: {module_file}: {e}"
+                    )
         self._pages.append(
             {
                 "title": title,

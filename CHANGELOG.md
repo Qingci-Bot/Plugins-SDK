@@ -4,6 +4,16 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [Unreleased]
+
+### Fixed
+
+- **`friend_decrease` 不再误映射到 `friend_recall`**：v11 无好友删除对应通知类型，移除映射避免监听撤回事件的插件收到错误语义通知
+- **`Message.from_raw` 解析 CQ 码字符串**：新增 `parse_cq_string`，含 `[CQ:at,...]` 的 v11 字符串消息解析为 v12 段数组（`@` 识别不再失真）
+- **`Rule.__or__` 完整还原 ctx**：左侧 checker 修改任意字段（含 `subcommand` 等）在未命中时均被还原，避免污染右侧判定
+- **`Permission.__and__` 空 label 显示 `?`**：组合未命名的子权限时不再显示 `( & )`
+- **`register_page` web/ 目录探测失败不再静默**：记录 debug 日志便于排查
+
 ## [1.10.0] - 2026-08-20（与 Qingci-Bot-CE 1.10.0 同步）
 
 版本号同步，无代码变更（主项目本次为安全加固与稳定性修复，不涉及协议层）。

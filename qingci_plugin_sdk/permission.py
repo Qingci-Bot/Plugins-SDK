@@ -43,7 +43,10 @@ class Permission:
     def __and__(self, other: "Permission") -> "Permission":
         perm = Permission()
         perm._checkers = self._checkers + other._checkers
-        perm._label = f"({self._label} & {other._label})"
+        # 空 label（组合未命名的子权限）时显示可读的部件名，避免 `( & )`
+        left = self._label or "?"
+        right = other._label or "?"
+        perm._label = f"({left} & {right})"
         return perm
 
     def __or__(self, other: "Permission") -> "Permission":
