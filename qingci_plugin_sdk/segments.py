@@ -406,11 +406,18 @@ def to_v11_segment(seg: dict[str, Any]) -> dict[str, Any]:
     if seg_type == SegmentType.MENTION_ALL:
         return {"type": "at", "data": {"qq": "all"}}
 
-    if seg_type == SegmentType.VOICE:
-        return {"type": "record", "data": {"file": str(data.get("file_id", ""))}}
-
-    if seg_type in (SegmentType.IMAGE, SegmentType.AUDIO, SegmentType.VIDEO, SegmentType.FILE):
-        return {"type": seg_type, "data": {"file": str(data.get("file_id", ""))}}
+    if seg_type in (
+        SegmentType.VOICE,
+        SegmentType.IMAGE,
+        SegmentType.AUDIO,
+        SegmentType.VIDEO,
+        SegmentType.FILE,
+    ):
+        # v12 媒体段标准字段是 file_id；但部分插件（如 shiguang 图片链）会直接以
+        # file / url 携带 base64 或远程地址。发送前回退读取，避免 file_id 缺失时丢资源。
+        file_value = data.get("file_id") or data.get("file") or data.get("url") or ""
+        v11_type = "record" if seg_type == SegmentType.VOICE else seg_type
+        return {"type": v11_type, "data": {"file": str(file_value)}}
 
     if seg_type == SegmentType.REPLY:
         return {"type": "reply", "data": {"id": str(data.get("message_id", ""))}}

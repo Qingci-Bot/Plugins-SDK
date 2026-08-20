@@ -188,6 +188,24 @@ def test_to_v11_roundtrip():
     assert segments_to_v11(segments_to_v12(v11)) == v11
 
 
+def test_to_v11_media_fallback_file_url():
+    """媒体段缺 file_id 时回退读取 file / url，防止 shiguang 图片链丢资源"""
+    # file 字段（base64 / 本地路径）
+    seg = segments_to_v11([{"type": "image", "data": {"file": "data:image/png;base64,AAAA"}}])
+    assert seg == [{"type": "image", "data": {"file": "data:image/png;base64,AAAA"}}]
+    # url 字段（远程地址）——file_id 与 file 都缺时回退 url
+    seg = segments_to_v11([{"type": "image", "data": {"url": "https://example.com/a.jpg"}}])
+    assert seg == [{"type": "image", "data": {"file": "https://example.com/a.jpg"}}]
+    # file_id 优先级高于 file / url
+    seg = segments_to_v11(
+        [{"type": "image", "data": {"file_id": "f.png", "file": "base64", "url": "http://x"}}]
+    )
+    assert seg == [{"type": "image", "data": {"file": "f.png"}}]
+    # voice 同规则（v12 voice -> v11 record）
+    seg = segments_to_v11([{"type": "voice", "data": {"file": "a.amr"}}])
+    assert seg == [{"type": "record", "data": {"file": "a.amr"}}]
+
+
 # ============ MessageContext.from_v12_event ============
 
 

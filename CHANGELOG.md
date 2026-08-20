@@ -4,6 +4,12 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [1.13.0] - 2026-08-21（与 Qingci-Bot-CE 1.13.0 同步）
+
+### Fixed
+
+- **媒体段 v11 转换字段回退**：`to_v11_segment` 对 image/voice/audio/video/file 段在 v12 标准字段 `file_id` 缺失时，回退读取 `file`/`url` 字段（支持插件直接以 base64 或远程地址携带的 v12 图片段，如 shiguang `/签到` 卡图）；voice 段 v11 类型保持 `record`。修复 OneBot 11 发送链路只读 `file_id` 导致图片段丢失、只剩 caption 纯文本的问题
+
 ## [1.12.0] - 2026-08-20（与 Qingci-Bot-CE 1.12.0 同步）
 
 版本号同步，无代码变更（主项目本次为阶段二/三落地：数据保留清理、前端 API 层、v11 翻译已在此前版本收敛进 SDK、PG 迁移加固等，不涉及协议层）。
