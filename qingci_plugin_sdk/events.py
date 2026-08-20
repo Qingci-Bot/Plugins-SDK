@@ -36,6 +36,7 @@ handler 参数注入：在 Matcher handler 中声明类型化事件参数，
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 __all__ = [
     "NoticeEvent",
@@ -55,6 +56,7 @@ __all__ = [
     "parse_request_event",
     "parse_event",
     "parse_v12_event",
+    "translate_v11_event",
     "detail_type_to_notice_type",
     "notice_type_to_detail_type",
 ]
@@ -115,8 +117,17 @@ def detail_type_to_notice_type(detail_type: str) -> str:
     return _V12_TO_V11_NOTICE.get(detail_type, detail_type)
 
 
-def notice_type_to_detail_type(notice_type: str) -> str:
-    """v11 notice_type -> v12 detail_type（未知类型原样返回）"""
+def notice_type_to_detail_type(notice_type: str, sub_type: str = "") -> str:
+    """v11 notice_type -> v12 detail_type（未知类型原样返回）
+
+    按 sub_type 细分的类型（group_admin / group_ban）在 sub_type 缺失时
+    给出保守默认（group_admin -> group_admin_unset、group_ban ->
+    group_member_ban），与 OneBot 12 语义一致。
+    """
+    if notice_type == "group_admin":
+        return "group_admin_set" if sub_type == "set" else "group_admin_unset"
+    if notice_type == "group_ban":
+        return "group_member_unban" if sub_type == "lift_ban" else "group_member_ban"
     return _V11_TO_V12_NOTICE.get(notice_type, notice_type)
 
 
@@ -392,3 +403,97 @@ def parse_v12_event(raw: dict) -> NoticeEvent | RequestEvent | None:
     供主项目 Dispatcher 的 v12 归一化链路使用。
     """
     return parse_event(_str(raw.get("type")), raw)
+
+
+# ============ v11 -> v12 事件翻译（协议映射单一来源） ============
+
+
+def translate_v11_event(event: dict, *, impl: str = "") -> dict[str, Any]:
+    """OneBot 11 事件 dict -> OneBot 12 事件 dict（平台无关）
+
+    供适配器/宿主把 v11 事件归一化为 v12 事件模型（type / detail_type /
+    message[]），使核心只消费 v12 事件：
+    - message: post_type -> type；message_type -> detail_type；
+      raw_message -> alt_message；含 CQ 码的字符串消息解析为 v12 段数组
+    - notice:  notice_type -> detail_type（group_admin / group_ban 按
+      sub_type 细分）
+    - request: request_type -> detail_type
+    - meta:    meta_event_type -> detail_type
+
+    无法识别的事件类型原样返回（防御性，不丢事件）。platform 保留事件
+    原值（默认空），impl 由调用方传入（如 "onebot11"）；宿主可在返回后
+    补充平台字段。
+    """
+    from .segments import parse_cq_string
+
+    post_type = event.get("post_type", "")
+
+    def _base_fields(event_type: str, detail_type: str) -> dict[str, Any]:
+        return {
+            "type": event_type,
+            "detail_type": detail_type,
+            "sub_type": str(event.get("sub_type", "")),
+            "id": str(event.get("message_id") or event.get("flag") or ""),
+            "impl": impl,
+            "platform": str(event.get("platform", "") or ""),
+            "self_id": str(event.get("self_id", "") or ""),
+            "time": event.get("time", 0),
+        }
+
+    if post_type == "message":
+        v12 = _base_fields("message", str(event.get("message_type", "")))
+        # v11 message 可能是字符串（含 CQ 码）或段数组：
+        # 字符串含 CQ 码时解析为 v12 段数组（否则 @bot 的 CQ:at 会被
+        # 整体包成 text 段，导致 is_at_bot / at_list 失真）
+        raw_message = event.get("message", [])
+        if isinstance(raw_message, str) and "CQ:" in raw_message:
+            raw_message = parse_cq_string(raw_message)
+        v12.update(
+            {
+                "message_id": str(event.get("message_id", "") or ""),
+                "message": raw_message,
+                "alt_message": str(event.get("raw_message", "") or ""),
+                "user_id": str(event.get("user_id", "") or ""),
+                "group_id": str(event.get("group_id", "") or ""),
+                "sender": event.get("sender", {}) or {},
+            }
+        )
+        return v12
+
+    if post_type == "notice":
+        notice_type = str(event.get("notice_type", ""))
+        detail_type = notice_type_to_detail_type(notice_type, str(event.get("sub_type", "")))
+        v12 = _base_fields("notice", detail_type)
+        v12.update(
+            {
+                "user_id": str(event.get("user_id", "") or ""),
+                "group_id": str(event.get("group_id", "") or ""),
+                "operator_id": str(event.get("operator_id", "") or ""),
+            }
+        )
+        # 携带 v11 原始通知字段，供 LLM 事件缓冲等读取
+        for key in ("duration", "target_id", "file", "message_id"):
+            if key in event:
+                v12[key] = event[key]
+        return v12
+
+    if post_type == "request":
+        v12 = _base_fields("request", str(event.get("request_type", "")))
+        v12.update(
+            {
+                "user_id": str(event.get("user_id", "") or ""),
+                "group_id": str(event.get("group_id", "") or ""),
+                "comment": str(event.get("comment", "") or ""),
+                "flag": str(event.get("flag", "") or ""),
+            }
+        )
+        return v12
+
+    if post_type == "meta_event":
+        v12 = _base_fields("meta", str(event.get("meta_event_type", "")))
+        v12["sub_type"] = str(event.get("sub_type", ""))
+        if "status" in event:
+            v12["status"] = event["status"]
+        return v12
+
+    return dict(event)

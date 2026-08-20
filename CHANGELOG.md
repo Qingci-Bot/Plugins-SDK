@@ -4,13 +4,11 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
-## [1.10.1] - 2026-08-20
+## [1.11.0] - 2026-08-20（与 Qingci-Bot-CE 1.11.0 同步）
 
-### Fixed
+### Added
 
-- **`parse_cq_string` 不再引用不存在的 `SegmentType.FACE`**：`face` 是 v11 专属段类型（v12 无标准 face 段），改用字符串字面量透传，修复 mypy CI 报错
-
-## [Unreleased]
+- **`translate_v11_event`**：OneBot 11 事件 dict -> OneBot 12 事件 dict 的统一翻译（message 含 CQ 码解析 / notice 按 sub_type 细分 / request / meta / 未知事件透传），作为 v11 <-> v12 协议映射的单一来源；`notice_type_to_detail_type` 支持 sub_type 细分（group_admin / group_ban）
 
 ### Fixed
 
@@ -19,6 +17,14 @@
 - **`Rule.__or__` 完整还原 ctx**：左侧 checker 修改任意字段（含 `subcommand` 等）在未命中时均被还原，避免污染右侧判定
 - **`Permission.__and__` 空 label 显示 `?`**：组合未命名的子权限时不再显示 `( & )`
 - **`register_page` web/ 目录探测失败不再静默**：记录 debug 日志便于排查
+
+## [1.10.1] - 2026-08-20
+
+### Fixed
+
+- **`parse_cq_string` 不再引用不存在的 `SegmentType.FACE`**：`face` 是 v11 专属段类型（v12 无标准 face 段），改用字符串字面量透传，修复 mypy CI 报错
+
+## [Unreleased]
 
 ## [1.10.0] - 2026-08-20（与 Qingci-Bot-CE 1.10.0 同步）
 
