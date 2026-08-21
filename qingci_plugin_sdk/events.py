@@ -49,6 +49,12 @@ __all__ = [
     "FriendAddNotice",
     "GroupUploadNotice",
     "PokeNotice",
+    "FriendPokeNotice",
+    "GroupLuckyKingNotice",
+    "GroupHonorChangeNotice",
+    "GroupCardNotice",
+    "GroupEssenceNotice",
+    "GroupSignInNotice",
     "RequestEvent",
     "FriendRequestEvent",
     "GroupRequestEvent",
@@ -95,7 +101,13 @@ _V12_TO_V11_NOTICE: dict[str, str] = {
     "group_member_unban": "group_ban",
     "group_file_upload": "group_upload",
     "group_poke": "poke",
-    "friend_poke": "poke",
+    "friend_poke": "friend_poke",
+    # 扩展通知（NapCat / LLBot 等实现）：v12 无标准对应，保持同名
+    "group_lucky_king": "group_lucky_king",
+    "group_honor_change": "group_honor_change",
+    "group_card": "group_card",
+    "group_essence": "essence",
+    "group_sign_in": "group_sign_in",
 }
 
 # v11 notice_type -> v12 detail_type（反向映射，供事件转发/测试使用）
@@ -109,6 +121,13 @@ _V11_TO_V12_NOTICE: dict[str, str] = {
     "group_ban": "group_member_ban",
     "group_upload": "group_file_upload",
     "poke": "group_poke",
+    # 扩展通知（v11 常见于 NapCat / LLBot 等扩展协议端）
+    "friend_poke": "friend_poke",
+    "group_lucky_king": "group_lucky_king",
+    "group_honor_change": "group_honor_change",
+    "group_card": "group_card",
+    "essence": "group_essence",
+    "group_sign_in": "group_sign_in",
 }
 
 
@@ -220,6 +239,48 @@ class PokeNotice(NoticeEvent):
 
 
 @dataclass
+class FriendPokeNotice(NoticeEvent):
+    """好友戳一戳（扩展通知，NapCat / LLBot 等）"""
+
+    target_id: int = 0  # 被戳用户
+
+
+@dataclass
+class GroupLuckyKingNotice(NoticeEvent):
+    """群红包运气王（扩展通知）"""
+
+    target_id: int = 0  # 运气王用户
+
+
+@dataclass
+class GroupHonorChangeNotice(NoticeEvent):
+    """群成员荣誉变更（扩展通知）"""
+
+    honor_type: str = ""  # 荣誉类型（talkative/performer/emotion 等）
+
+
+@dataclass
+class GroupCardNotice(NoticeEvent):
+    """群名片变更（扩展通知）"""
+
+    card_new: str = ""  # 新名片
+    card_old: str = ""  # 旧名片
+
+
+@dataclass
+class GroupEssenceNotice(NoticeEvent):
+    """群精华消息（扩展通知，sub_type: add/delete）"""
+
+    message_id: int = 0  # 精华消息 ID
+    operation: str = ""  # 操作（add/delete）
+
+
+@dataclass
+class GroupSignInNotice(NoticeEvent):
+    """群签到（扩展通知，部分协议端实现）"""
+
+
+@dataclass
 class MessageEditedEvent(NoticeEvent):
     """消息编辑（Telegram 扩展事件，notice_type=message_edited）
 
@@ -244,6 +305,12 @@ _NOTICE_CLASSES: dict[str, tuple[type[NoticeEvent], tuple[str, ...]]] = {
     "friend_add": (FriendAddNotice, ()),
     "group_upload": (GroupUploadNotice, ("file",)),
     "poke": (PokeNotice, ("target_id",)),
+    "friend_poke": (FriendPokeNotice, ("target_id",)),
+    "group_lucky_king": (GroupLuckyKingNotice, ("target_id",)),
+    "group_honor_change": (GroupHonorChangeNotice, ("honor_type",)),
+    "group_card": (GroupCardNotice, ("card_new", "card_old")),
+    "essence": (GroupEssenceNotice, ("message_id", "operation")),
+    "group_sign_in": (GroupSignInNotice, ()),
     "message_edited": (MessageEditedEvent, ("message_id", "alt_message", "message", "is_at_bot")),
 }
 
