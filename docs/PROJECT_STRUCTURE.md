@@ -4,11 +4,11 @@
 
 ## 1. 仓库定位
 
-`Plugins-SDK` 是 `Qingci-Bot` 根目录下的**多个独立子项目之一**，与 `Qingci-Bot-CE`、`qqbot-plugin-comparison` 平级。它的定位是：
+`Plugins-SDK` 是 `Qingci-Bot` 根目录下的**多个独立子项目之一**，与 `Qingci-Bot-CE`、`Plugin-Market` 平级。它的定位是：
 
 - **独立可安装的插件开发工具包**：打包为 `qingci-plugin-sdk`（源码目录 `qingci_plugin_sdk/`），供插件开发者 `pip/uv install -e .` 后直接使用。
 - **插件协议层的唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext`/`RateLimiter` 等协议定义在本仓库维护，主项目 `Qingci-Bot-CE` 的 `bot/plugin/protocol/` 为薄转发（`bot/plugin/` 顶层同名文件为兼容再导出），修改协议只需改这里。
-- **插件的开发与验证环境**：`plugins/` 下内置 `hello`（最小示例）与 `_template`（完整模板），开发者复制模板即可开始写插件。
+- **插件的开发与验证环境**：`plugins/` 下内置 `_template`（完整模板），开发者复制模板即可开始写插件；最小示例见独立仓库 [Qingci-Bot/hello](https://github.com/Qingci-Bot/hello)。
 - **不依赖主项目**：SDK 自带 `MessageContext`、`Rule`、`Permission` 等定义，插件开发期无需主项目即可 import 与冒烟测试。
 
 每个子项目独立管理自己的 `.git` 仓库与依赖；**任何子项目的运行产物不得写入根目录**，必须留在自身目录内。
@@ -35,7 +35,7 @@ Plugins-SDK/
 │   └── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
 ├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
 ├── pyproject.toml            # 包元数据（name/version）、构建配置、ruff/mypy 配置
-├── README.md                 # 插件开发指南（面向插作者）
+├── README.md                 # 插件开发指南（面向插件作者）
 ├── CHANGELOG.md              # 变更记录
 ├── LICENSE                   # GPL-3.0
 ├── uv.lock                   # uv 依赖锁

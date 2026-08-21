@@ -1307,7 +1307,7 @@ A: 这些是可选依赖，取决于主项目的配置。使用前务必判空�
 
 ### Q: 如何调试插件？
 
-A: 在代码里加 `logger.info(...)` 打印日志，然后在 Qingci-Bot 的 Web UI「日志」页面查看输出。
+A: 在代码里加 `logger.info(...)` 打印日志，然后在 Qingci-Bot 的 Web UI「运行日志」页面查看输出（需 `log.run_log_enabled` 开启，默认开）。
 
 ### Q: 可以导入第三方库吗？
 

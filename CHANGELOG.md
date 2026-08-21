@@ -4,6 +4,8 @@
 
 版本号与主项目 `Qingci-Bot-CE` 保持同步。
 
+## [Unreleased]
+
 ## [1.13.0] - 2026-08-21（与 Qingci-Bot-CE 1.13.0 同步）
 
 ### Fixed
@@ -33,8 +35,6 @@
 ### Fixed
 
 - **`parse_cq_string` 不再引用不存在的 `SegmentType.FACE`**：`face` 是 v11 专属段类型（v12 无标准 face 段），改用字符串字面量透传，修复 mypy CI 报错
-
-## [Unreleased]
 
 ## [1.10.0] - 2026-08-20（与 Qingci-Bot-CE 1.10.0 同步）
 
