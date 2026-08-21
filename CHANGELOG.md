@@ -2,9 +2,9 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-版本号与主项目 `Qingci-Bot-CE` 保持同步。
+SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
 
-## [Unreleased]
+## [1.13.2] - 2026-08-21
 
 ### Added
 
