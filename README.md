@@ -496,6 +496,12 @@ async def on_group_request(ctx: MatcherContext, event: GroupRequestEvent) -> boo
 | 好友添加 | `FriendAddNotice` | - |
 | 群文件上传 | `GroupUploadNotice` | `file` |
 | 戳一戳 | `PokeNotice` | `target_id` |
+| 好友戳一戳 | `FriendPokeNotice` | `target_id` |
+| 群红包运气王 | `GroupLuckyKingNotice` | `target_id` |
+| 群荣誉变更 | `GroupHonorChangeNotice` | `honor_type` |
+| 群名片变更 | `GroupCardNotice` | `card_new`, `card_old` |
+| 群精华消息 | `GroupEssenceNotice` | `message_id`, `operation` |
+| 群签到 | `GroupSignInNotice` | - |
 | 加群请求 | `GroupRequestEvent` | `group_id`, `comment`, `flag` |
 | 加好友请求 | `FriendRequestEvent` | `comment`, `flag` |
 

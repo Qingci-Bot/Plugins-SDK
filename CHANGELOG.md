@@ -6,6 +6,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- **扩展通知类型化**：`events.py` 新增 6 个扩展通知类型化事件类与 v11/v12 双向映射——`GroupLuckyKingNotice`（群红包运气王）/ `GroupHonorChangeNotice`（群荣誉变更）/ `GroupCardNotice`（群名片变更）/ `GroupEssenceNotice`（群精华消息）/ `GroupSignInNotice`（群签到）/ `FriendPokeNotice`（好友戳一戳）。NapCat / LLBot 等扩展协议端的这类通知此前回退 `NoticeEvent` 基类，插件需手撕 `raw_event`；现可 `on_notice` + 类型注解消费
+
 ## [1.13.1] - 2026-08-21
 
 ### Fixed
