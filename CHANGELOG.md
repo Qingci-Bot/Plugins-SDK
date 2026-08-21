@@ -6,6 +6,12 @@
 
 ## [Unreleased]
 
+## [1.13.1] - 2026-08-21
+
+### Fixed
+
+- **on_load 运行时注册的 on_command 子指令被静默丢弃**：`on_command` 的子指令 matcher 此前只进模块级收集器（import 阶段有效）；插件在 `on_load` 内运行时注册（收集器已关闭）时子 matcher 不返回、不附加，被静默丢弃，导致「父指令已排除子指令、子指令 matcher 又不注册」——子命令（如 `签到排行 今日`）完全不触发。现把全部子指令 matcher 挂到返回的 `parent.meta["sub_matchers"]`，宿主（Qingci-Bot-CE PluginManager）注册 parent 时按对象 id 去重展开注册（模块级场景不双份）。对所有在 on_load 内注册子命令的插件生效
+
 ## [1.13.0] - 2026-08-21（与 Qingci-Bot-CE 1.13.0 同步）
 
 ### Fixed

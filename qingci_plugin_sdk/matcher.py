@@ -199,6 +199,7 @@ def on_command(
 
         # 子指令：每个子指令独立 Matcher（同一 priority，规则与父指令互斥），
         # 子指令消息必然命中对应子指令 Matcher，父指令不会拦截
+        sub_matchers: list[Matcher] = []
         if subcommands:
             for sub_name, sub_handler in subcommands.items():
                 sub_rule = combined_rule & _subcommand(cmd_list[0], sub_name)
@@ -216,7 +217,13 @@ def on_command(
                 sub_m.meta["is_subcommand"] = True
                 if args_schema:
                     sub_m.meta["args_schema"] = dict(args_schema)
+                sub_matchers.append(sub_m)
                 _collect_module_matcher(sub_m)
+        # 子指令 matcher 同时挂到 parent.meta["sub_matchers"]：模块级收集器关闭后
+        # （如插件在 on_load 内运行时注册 on_command），子 matcher 不会进收集器，
+        # 宿主可随返回的 parent 一并注册，避免子指令被静默丢弃导致"父指令不匹配、
+        # 子指令不存在"。
+        parent.meta["sub_matchers"] = sub_matchers
         return parent
 
     return decorator
