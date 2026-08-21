@@ -23,6 +23,7 @@ Plugins-SDK/
 │   ├── context.py            # MessageContext 消息上下文（主项目 dispatcher 转发同一类型）
 │   ├── matcher.py            # Matcher、MatcherContext、匹配器工厂（on_command 等）
 │   ├── rule.py               # Rule 规则系统（command/subcommand/keyword/...）
+│   ├── segments.py           # OneBot 12 消息段抽象（Message/MessageSegment + v11↔v12 转换）
 │   ├── permission.py         # Permission 权限体系
 │   ├── ratelimit.py          # RateLimiter 限流
 │   ├── i18n.py               # I18n 国际化翻译器
@@ -33,6 +34,7 @@ Plugins-SDK/
 ├── plugins/                  # 插件开发/验证环境
 │   ├── __init__.py           # 包标记
 │   └── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
+├── tests/                    # SDK 单元测试（pytest）
 ├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
 ├── pyproject.toml            # 包元数据（name/version）、构建配置、ruff/mypy 配置
 ├── README.md                 # 插件开发指南（面向插件作者）

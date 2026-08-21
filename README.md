@@ -276,12 +276,14 @@ Plugins-SDK/
 │   ├── events.py            # 类型化事件（notice/request 事件模型 + 解析工厂）
 │   ├── matcher.py           # Matcher 匹配器 + 工厂函数
 │   ├── rule.py              # Rule 规则系统 + 内置规则
+│   ├── segments.py          # OneBot 12 消息段抽象（Message/MessageSegment + v11↔v12 转换）
 │   ├── permission.py        # Permission 权限系统 + 内置权限
 │   ├── ratelimit.py         # RateLimiter 限流器
 │   ├── session.py           # 会话阶梯（多轮交互）：Session + Pause/Finish/Reject 异常
 │   ├── i18n.py              # I18n 国际化翻译器
 │   ├── llm_tool.py          # @llm_tool 插件级 LLM 工具声明
 │   └── paths.py             # app_root 路径解析 + data_root 覆盖钩子（供 data_dir 使用）
+├── tests/                   # SDK 单元测试（pytest）
 └── plugins/                 # 你的插件源码都放在这里
     └── _template/           # 完整开发模板（以 _ 开头，不会被加载）
         └── __init__.py
@@ -1311,7 +1313,7 @@ A: 在代码里加 `logger.info(...)` 打印日志，然后在 Qingci-Bot 的 We
 
 ### Q: 可以导入第三方库吗？
 
-A: 可以。在插件目录放置 `requirements.txt`（或在 `plugin.json` 的 `requirements` 字段）声明依赖，主项目加载插件时会自动安装到实例隔离目录（`data_root()/deps/`）并注入 `sys.path`，插件内可直接 `import`。该自动安装由主项目 `config.yaml` 的 `bot.auto_install_plugin_deps` 控制（默认开启，可关闭以降低供给链风险）。建议尽量使用 SDK 提供的能力，减少外部依赖。
+A: 可以。在插件目录放置 `requirements.txt`（或在 `plugin.json` 的 `requirements` 字段）声明依赖，主项目加载插件时会自动安装到实例隔离的每插件独立目录（`data_root()/deps/<插件名>/`）并注入 `sys.path`，插件内可直接 `import`。该自动安装由主项目 `config.yaml` 的 `bot.auto_install_plugin_deps` 控制（默认开启，可关闭以降低供给链风险）。建议尽量使用 SDK 提供的能力，减少外部依赖。
 
 > 注意区分：`requirements` 声明 **Python 包依赖**（自动安装）；类属性 `require` 声明**插件间依赖**（加载顺序与版本约束），两者不同。
 
