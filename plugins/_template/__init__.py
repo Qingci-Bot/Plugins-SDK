@@ -215,7 +215,7 @@ class TemplatePlugin(PluginBase):
                 minute=0,
             )
 
-        # ─── 10. 注册 Function Calling 工具（需 self.tool_registry 可用）─
+        # ─── 11. 注册 Function Calling 工具（需 self.tool_registry 可用）─
         if self.tool_registry is not None:
             self.tool_registry.register(
                 name="get_time",
@@ -262,10 +262,9 @@ class TemplatePlugin(PluginBase):
         return None
 
     # ========== 模块级 LLM 工具（@llm_tool，1.4.0）==========
-
-    @llm_tool(name="get_time", description="获取当前时间")
-    async def get_time(self) -> str:
-        return datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d %H:%M:%S")
+    # 注意：@llm_tool 仅用于模块级自由函数（见下方 status_handler 模式）。
+    # 插件方法请用 self.tool_registry.register(handler=self._tool_get_time)，
+    # 见 on_load 第 10 步；在方法上使用 @llm_tool 会被装饰器拒绝收集并告警。
 
     # ========== 命令处理器 ==========
 

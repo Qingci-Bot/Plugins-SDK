@@ -265,7 +265,7 @@ def test_parse_extended_notice_types():
 def test_parse_extended_notice_v12_input():
     """v12 detail_type（扩展通知）输入同样解析为类型化子类
 
-    v12 字段为字符串语义（target_id 保留字符串，与 v11 数字输入一致）
+    v12 字段虽为字符串，但类型化字段按目标类型归一（target_id -> int）。
     """
     from qingci_plugin_sdk.events import GroupLuckyKingNotice, parse_notice_event
 
@@ -274,4 +274,37 @@ def test_parse_extended_notice_v12_input():
     )
     assert isinstance(evt, GroupLuckyKingNotice)
     assert evt.notice_type == "group_lucky_king"
-    assert evt.target_id == "2"
+    assert evt.target_id == 2
+
+
+def test_notice_fields_normalized_by_target_type():
+    """字段类型按目标 dataclass 类型归一，而非源值类型（跨协议一致性）"""
+    from qingci_plugin_sdk.events import (
+        GroupEssenceNotice,
+        MessageEditedEvent,
+        parse_notice_event,
+    )
+
+    # int 字段：v12 字符串输入 -> int
+    essence = parse_notice_event(
+        {"type": "notice", "detail_type": "essence", "group_id": "1", "message_id": "99"}
+    )
+    assert isinstance(essence, GroupEssenceNotice)
+    assert essence.message_id == 99
+    assert isinstance(essence.message_id, int)
+
+    # str 字段：MessageEditedEvent.message_id 为字符串语义，保持 str
+    edited = parse_notice_event(
+        {
+            "type": "notice",
+            "detail_type": "message_edited",
+            "message_id": "abc123",
+            "alt_message": "新文本",
+            "is_at_bot": "false",
+        }
+    )
+    assert isinstance(edited, MessageEditedEvent)
+    assert edited.message_id == "abc123"
+    assert isinstance(edited.message_id, str)
+    assert edited.alt_message == "新文本"
+    assert edited.is_at_bot is False

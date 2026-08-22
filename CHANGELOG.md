@@ -4,6 +4,22 @@
 
 SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
 
+## [1.13.4] - 2026-08-22（SDK 代码审阅报告修复）
+
+### Fixed
+
+- **类型化事件字段类型由"源值类型"决定（P1）**：`parse_notice_event` 此前对 str 源值保持 str、其余转 int，而 dataclass 字段声明为 int（如 `target_id`）——OB12 字符串 ID 会被存成 str，插件对字段做数值比较/运算会崩；且该类型违约被测试固化（`target_id == "2"`）。现改为按 `dataclasses.fields` 目标类型归一（int/str/bool 分派），字符串 ID 正确转回 int，`MessageEditedEvent.message_id`（str 语义）保持 str；新增 `_bool` 安全转换（`"false"`/`"0"` 正确解析为 False）
+- **`@llm_tool` 装饰插件方法捕获未绑定函数（P2）**：装饰器收集到的是原函数对象，宿主按零参调用会缺 self 抛 TypeError；模板插件 `_template` 此前在方法上误用 `@llm_tool`（死代码陷阱）。现装饰器对模块层类方法（qualname 含点且无 `<locals>`）拒绝收集并告警；模板删除该方法上的 `@llm_tool`，改注释引导 `tool_registry.register(handler=self.method)`
+- **`on_startswith` 不剥离前导 `/`（P3）**：此前 `text.startswith(p)` 直接匹配，`/天气 北京` 无法触发 `on_startswith("天气")`（命令规则则能）。现与 `command` 对齐，匹配前剥离一个前导 `/`
+- **`RateLimiter` 键类型与实参矛盾（P2，v1.13.3 已修）**：补记于上一版本
+
+### Changed
+
+- **`begin_tool_collection` / `end_tool_collection` 加入 `__all__` 导出**：与 `begin/end_module_collection` 对称（此前仅内部可用）
+- **`on_notice` / `on_request` 弃用提示指向 Matcher 工厂**（matcher.py），消除方法名自指歧义
+- **i18n 加载方式注释说明**：`PluginBase.i18n` 不会自动 `load_dir`，需插件在 `on_load` 手动加载 `data_dir/i18n`
+- **Rule / Permission 异常处理注释**：checker 抛异常即拒绝/无权限（安全默认），说明有意为之
+
 ## [1.13.3] - 2026-08-22（跨协议一致性修复）
 
 ### Fixed

@@ -36,7 +36,7 @@ handler 参数注入：在 Matcher handler 中声明类型化事件参数，
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, get_type_hints
 
 __all__ = [
     "NoticeEvent",
@@ -81,6 +81,13 @@ def _str(value, default: str = "") -> str:
     if value is None:
         return default
     return str(value)
+
+
+def _bool(value, default: bool = False) -> bool:
+    """安全转 bool：字符串 "false"/"0"/"no" 正确解析为 False（避免 bool("false") 误判）"""
+    if isinstance(value, str):
+        return value.strip().lower() in ("1", "true", "yes", "on")
+    return bool(value) if value is not None else default
 
 
 # ============ v11 notice_type <-> v12 detail_type 映射 ============
@@ -359,18 +366,22 @@ def parse_notice_event(raw: dict) -> NoticeEvent:
         "platform": _str(raw.get("platform")),
     }
     cls = _NOTICE_CLASSES.get(notice_type, (NoticeEvent, ()))[0]
+    # 按目标字段类型归一，而非源值类型：OB12 字符串 ID 会被转回 int，
+    # MessageEditedEvent.message_id（str 语义）保持 str，is_at_bot 保持 bool。
+    target_types = get_type_hints(cls)
     for name in _NOTICE_CLASSES.get(notice_type, (NoticeEvent, ()))[1]:
         value = raw.get(name)
+        target = target_types.get(name)
         if name == "file":
             kwargs[name] = dict(value) if isinstance(value, dict) else {}
-        elif isinstance(value, (dict, list)):
-            kwargs[name] = value
-        elif isinstance(value, str):
-            kwargs[name] = _str(value)  # str 字段（如 message_id/alt_message）原样保留
-        elif isinstance(value, bool):
-            kwargs[name] = bool(value)  # bool 字段（如 is_at_bot）原样保留
-        else:
+        elif target is bool:
+            kwargs[name] = _bool(value)
+        elif target is int:
             kwargs[name] = _int(value)
+        elif target is str:
+            kwargs[name] = _str(value)
+        else:
+            kwargs[name] = value
     return cls(**kwargs)  # type: ignore[arg-type]  # kwargs 值已按字段类型化
 
 

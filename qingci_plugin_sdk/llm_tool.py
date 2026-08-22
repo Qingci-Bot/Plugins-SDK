@@ -28,6 +28,11 @@
 
 工具注册名由主项目自动加插件名前缀（<plugin_name>_<tool_name>），避免跨插件冲突。
 本 SDK 提供声明与收集机制；实际注册由主项目 PluginManager 完成。
+
+⚠️ **仅用于模块级自由函数**：装饰器收集到的是原函数对象（未绑定），宿主按
+`handler(**args)` 零参调用。若装饰插件方法（首个参数为 self/cls），收集到的是
+未绑定方法，运行时缺 self 抛 TypeError。装饰器已对类内定义（__qualname__ 含点）
+的函数拒绝收集并告警；插件方法请用 `tool_registry.register(handler=self.method)`。
 """
 
 import threading
@@ -64,6 +69,17 @@ def llm_tool(
     """
 
     def decorator(func):
+        qualname = getattr(func, "__qualname__", "")
+        # 模块层类内定义的方法（qualname 形如 "Class.method"）宿主按零参调用会缺
+        # self，拒绝收集避免运行时 TypeError；嵌套/局部函数（含 "<locals>"）放行。
+        if "." in qualname and "<locals>" not in qualname:
+            import logging
+
+            logging.getLogger("qingci-plugin-sdk.llm_tool").warning(
+                f"@llm_tool 仅用于模块级自由函数，已忽略类方法 {qualname}；"
+                "插件方法请用 tool_registry.register(handler=self.method)"
+            )
+            return func
         spec = LlmToolSpec(
             name=name or func.__name__,
             handler=func,

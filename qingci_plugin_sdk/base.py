@@ -101,7 +101,9 @@ class PluginBase(ABC):
         self._before_handlers = []
         self._after_handlers = []
         self._status = PluginStatus.LOADING
-        # 国际化：插件可声明 i18n/<locale>.json 翻译资源，self._ = self.i18n.t
+        # 国际化：插件可声明 i18n/<locale>.json 翻译资源，self._ = self.i18n.t。
+        # 注意：加载时不会自动 load_dir；需插件在 on_load 手动调用
+        # self.i18n.load_dir(self.data_dir / "i18n") 加载（宿主不代办）。
         from .i18n import I18n
 
         self.i18n = I18n("zh-CN")
@@ -280,14 +282,14 @@ class PluginBase(ABC):
     async def on_notice(self, event: dict) -> None:
         """处理通知事件（已弃用）
 
-        Deprecated: 请改用 on_notice 事件 Matcher 注册处理。
+        Deprecated: 请改用 Matcher 工厂 on_notice()（matcher.py）注册事件处理。
         """
         return None
 
     async def on_request(self, event: dict) -> bool | None:
         """处理请求事件（加群/加好友），返回 True 同意 / False 拒绝 / None 忽略（已弃用）
 
-        Deprecated: 请改用 on_request 事件 Matcher 注册处理。
+        Deprecated: 请改用 Matcher 工厂 on_request()（matcher.py）注册事件处理。
         """
         return None
 

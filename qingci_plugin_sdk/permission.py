@@ -27,7 +27,11 @@ class Permission:
         return self._label
 
     async def check(self, bot, event: dict, ctx: MessageContext) -> bool:
-        """检查权限：所有 checker 都通过才返回 True（AND 逻辑）"""
+        """检查权限：所有 checker 都通过才返回 True（AND 逻辑）
+
+        任一 checker 抛异常即视为无权限（安全默认：不拒绝放行也不误放行），
+        仅记 warning。
+        """
         for checker in self._checkers:
             try:
                 result = checker(bot, event, ctx)

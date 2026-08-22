@@ -7,7 +7,7 @@
     uv pip install -e .    # 从 Plugins-SDK 目录
 """
 
-__version__ = "1.13.3"
+__version__ = "1.13.4"
 
 from .base import PluginBase, PluginStatus
 from .context import MessageContext
@@ -34,7 +34,7 @@ from .events import (
     parse_v12_event,
 )
 from .i18n import I18n
-from .llm_tool import LlmToolSpec, llm_tool
+from .llm_tool import LlmToolSpec, begin_tool_collection, end_tool_collection, llm_tool
 from .matcher import (
     Matcher,
     MatcherContext,
@@ -127,6 +127,8 @@ __all__ = [
     # LLM 工具
     "LlmToolSpec",
     "llm_tool",
+    "begin_tool_collection",
+    "end_tool_collection",
     # Matcher
     "Matcher",
     "MatcherContext",

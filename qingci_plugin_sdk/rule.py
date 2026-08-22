@@ -36,6 +36,9 @@ class Rule:
             self._checkers.append(checker)
 
     async def check(self, bot, event: dict, ctx: MessageContext) -> bool:
+        # 任一 checker 抛异常即拒绝（安全默认：异常时不放行、不响应），
+        # 仅记 warning。注意：对带副作用的 checker（如 rate_limit 会发提示）
+        # 异常时既不拦截也不提示，调试困难，属有意为之的安全默认。
         for checker in self._checkers:
             try:
                 result = checker(bot, event, ctx)
@@ -98,11 +101,17 @@ class Rule:
 
 
 def startswith(prefix: str | tuple[str, ...]) -> Rule:
-    """前缀匹配，匹配后自动去除前缀写入 ctx.args"""
+    """前缀匹配，匹配后自动去除前缀写入 ctx.args
+
+    与 command 对齐：匹配前剥离一个前导 `/`（`/天气 北京` 可触发
+    `on_startswith("天气")`），参数取前缀后文本。
+    """
     prefixes = (prefix,) if isinstance(prefix, str) else tuple(prefix)
 
     def _check(bot, event, ctx):
         text = ctx.plain_text
+        if text.startswith("/"):
+            text = text[1:]
         for p in prefixes:
             if text.startswith(p):
                 ctx.args = text[len(p) :].strip()

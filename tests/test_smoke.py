@@ -106,6 +106,14 @@ async def test_startswith_rule_rejects():
     assert await rule.check(None, {}, ctx) is False
 
 
+async def test_startswith_rule_matches_with_leading_slash():
+    """前缀规则剥离前导 `/`（与 command 对齐）：/你好世界 触发 startswith("你好")"""
+    rule = startswith("你好")
+    ctx = MessageContext(raw_message="/你好世界", plain_text="/你好世界")
+    assert await rule.check(None, {}, ctx) is True
+    assert ctx.args == "世界"
+
+
 def test_on_startswith_builds_matcher():
     def handler(ctx):
         return "pong"
@@ -205,3 +213,27 @@ def test_llm_tool_decorator():
         end_tool_collection()
     assert any(s.handler is mul for s in specs)
     assert any(s.description == "乘法" for s in specs)
+
+
+def test_llm_tool_rejects_class_methods():
+    """@llm_tool 仅用于模块级自由函数：类方法（qualname 含点且无 <locals>）拒绝收集"""
+    import importlib
+
+    llm_tool_module = importlib.import_module("qingci_plugin_sdk.llm_tool")
+
+    def tool(self) -> str:  # noqa: ARG001 - 模拟类方法首参
+        return "x"
+
+    tool.__qualname__ = "SomeClass.tool"  # 模块层类方法形态（非局部函数）
+    decorated = llm_tool_module.llm_tool(name="should_not_collect")(tool)
+
+    llm_tool_module.begin_tool_collection()
+    try:
+        specs = [
+            s for s in (llm_tool_module._tool_collector or []) if s.name == "should_not_collect"
+        ]
+        assert specs == []
+    finally:
+        llm_tool_module.end_tool_collection()
+    # 装饰器仍返回原函数，不影响类本身
+    assert callable(decorated)
