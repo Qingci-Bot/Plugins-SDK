@@ -91,6 +91,9 @@ class MessageContext:
               "message": [{"type": "text", "data": {"text": "hi"}}],
               "alt_message": "hi", "user_id": "123456"
             }
+        self_id 约定：OB12 标准事件携带 `self` 对象（{platform, user_id}），
+        NapCat 等实现端以扁平 `self_id` 透传。此处优先读 `self_id`，缺失时
+        回退读 `self.user_id`（B1 兼容严格遵守规范、仅发 self 对象的实现端）。
         """
         ctx = cls(
             raw_event=dict(raw),
@@ -98,7 +101,11 @@ class MessageContext:
             detail_type=str(raw.get("detail_type", "")),
             event_id=str(raw.get("id", "")),
             platform=str(raw.get("platform", "") or "onebot"),
-            self_id=str(raw.get("self_id", "") or ""),
+            self_id=str(
+                raw.get("self_id", "")
+                or (raw.get("self") or {}).get("user_id", "")
+                or ""
+            ),
             message_id=str(raw.get("message_id", "") or ""),
             user_id=str(raw.get("user_id", "") or ""),
             group_id=str(raw.get("group_id", "") or ""),

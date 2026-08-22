@@ -530,6 +530,9 @@ def translate_v11_event(event: dict, *, impl: str = "") -> dict[str, Any]:
             "type": event_type,
             "detail_type": detail_type,
             "sub_type": str(event.get("sub_type", "")),
+            # v12 `id` 为标准 string；此处 v11 用 message_id / request 用 flag。
+            # 注意：notice 事件 v11 通常无 message_id，故通知类事件 id 可能为空
+            # （P3：核心按 detail_type/user_id/group_id 路由，id 缺失影响小）。
             "id": str(event.get("message_id") or event.get("flag") or ""),
             "impl": impl,
             "platform": str(event.get("platform", "") or ""),
@@ -555,6 +558,8 @@ def translate_v11_event(event: dict, *, impl: str = "") -> dict[str, Any]:
                 "sender": event.get("sender", {}) or {},
             }
         )
+        # C1：v11 匿名群消息（sub_type=anonymous）保留原 sub_type；v12 无匿名
+        # 概念，此值仅作提示，插件统一按 detail_type=group 路由，勿依赖 sub_type。
         return v12
 
     if post_type == "notice":

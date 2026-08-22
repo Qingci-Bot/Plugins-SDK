@@ -4,6 +4,16 @@
 
 SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
 
+## [1.13.6] - 2026-08-23（OneBot 12 协议符合度：self_id 回退读取）
+
+### Added
+
+- **`MessageContext.from_v12_event` 兼容严格 v12 `self` 对象**：官方 v12 标准事件以 `self` 对象（`{platform, user_id}`）标识机器人，而 NapCat 等实现端以扁平 `self_id` 透传。现 `self_id` 缺失时自动回退读 `self.user_id`，两类实现端均可正确识别（SDK OneBot 12 协议审阅报告 P2·B1）
+
+### Changed
+
+- **`translate_v11_event` 行为说明注释（P3）**：v11 匿名群消息 `sub_type="anonymous"` 为 v11 特有、v12 无等价语义，保留原值仅作提示，插件应统一按 `detail_type=group` 路由；notice 事件 `id` 在 v11 无 `message_id` 时可能为空，核心按 `detail_type`/`user_id`/`group_id` 路由不受影响
+
 ## [1.13.5] - 2026-08-22（命令元信息：别名与 help 可见性）
 
 ### Added

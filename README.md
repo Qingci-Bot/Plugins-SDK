@@ -644,6 +644,7 @@ async def handler(ctx: MatcherContext) -> str:
 - 事件模型一致：`type` / `detail_type` / `{type, data}` 消息段，媒体以 `file_id` 引用
 - 发送一致：`send_msg` / `send_group_msg` / `send_private_msg` 接受 v12 段数组，回复按 `ctx.platform` 自动路由回对应适配器
 - 权限一致：`super_admin` / `admin_users` 等以平台无关字符串 ID 配置
+- 机器人标识约定：`ctx.self_id` 读取扁平 `self_id` 字段；当事件仅携带官方 v12 标准 `self` 对象（`{platform, user_id}`）而无扁平字段时，自动回退读 `self.user_id`（`from_v12_event` 已实现），插件无需关心是哪类实现端
 
 **平台差异对照：**
 

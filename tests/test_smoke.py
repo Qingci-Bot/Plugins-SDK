@@ -94,6 +94,38 @@ def test_message_context_basics():
     assert ctx.platform == "onebot"  # 默认平台
 
 
+def test_message_context_self_id_flat():
+    """B1：扁平 self_id 优先读取"""
+    ctx = MessageContext.from_v12_event(
+        {
+            "type": "message",
+            "detail_type": "group",
+            "self_id": "888",
+            "message_id": "1",
+            "message": [{"type": "text", "data": {"text": "hi"}}],
+            "user_id": "123",
+            "group_id": "456",
+        }
+    )
+    assert ctx.self_id == "888"
+
+
+def test_message_context_self_id_fallback_to_self_object():
+    """B1：扁平 self_id 缺失时回退读 self.user_id（严格 v12 self 对象实现端）"""
+    ctx = MessageContext.from_v12_event(
+        {
+            "type": "message",
+            "detail_type": "group",
+            "self": {"platform": "qq", "user_id": "777"},
+            "message_id": "1",
+            "message": [{"type": "text", "data": {"text": "hi"}}],
+            "user_id": "123",
+            "group_id": "456",
+        }
+    )
+    assert ctx.self_id == "777"
+
+
 async def test_startswith_rule_matches():
     rule = startswith("你好")
     ctx = MessageContext(raw_message="你好世界", plain_text="你好世界")
