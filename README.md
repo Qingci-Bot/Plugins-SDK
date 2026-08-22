@@ -1059,8 +1059,8 @@ self._("hello", name="世界")  # -> "你好，世界"
 
 #### LLM 工具声明（1.4.0）
 
-用 `@llm_tool` 装饰器把函数暴露为 LLM 可调用的工具（模块级或类方法均可，
-PluginManager 加载时自动收集）：
+用 `@llm_tool` 装饰器把**模块级自由函数**暴露为 LLM 可调用的工具（PluginManager
+加载时自动收集）：
 
 ```python
 from qingci_plugin_sdk import llm_tool
@@ -1070,6 +1070,11 @@ from qingci_plugin_sdk import llm_tool
 async def get_time() -> str:
     return "2026-08-14 12:00:00"
 ```
+
+> ⚠️ **仅用于模块级自由函数**：装饰器收集到的是原函数对象（未绑定），宿主按零参
+> 调用。**不要装饰插件类方法**（`def get_time(self)`）——v1.13.4 起装饰器会拒绝
+> 收集类方法并告警（运行时缺 self 会 TypeError）。插件方法请用
+> `self.tool_registry.register(name=..., description=..., parameters=..., handler=self.method)`。
 
 #### 插件数据目录（1.4.0）
 
