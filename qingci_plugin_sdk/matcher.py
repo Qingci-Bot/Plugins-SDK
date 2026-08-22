@@ -142,6 +142,7 @@ def on_command(
     aliases: tuple[str, ...] = (),
     subcommands: dict | None = None,
     args_schema: dict | None = None,
+    hidden_in_help: bool = False,
 ) -> Callable:
     """注册命令匹配器（支持别名 / 子指令 / 类型化参数）
 
@@ -163,6 +164,9 @@ def on_command(
         @on_command("weather", args_schema={"city": str, "days": int})
         async def weather(ctx: MatcherContext, city: str = "", days: int = 1) -> str:
             return f"{city}: {days} 天预报"
+
+    hidden_in_help=True 的命令不出现在宿主的 /help 列表（用于内部/调试命令）。
+    meta 额外写入 aliases（完整别名列表）与 hidden_in_help，供宿主 /help 展示。
     """
     from .rule import command as _command
     from .rule import subcommand as _subcommand
@@ -190,9 +194,11 @@ def on_command(
             temp=temp,
             event_type="message",
         )
-        # 回填元信息：命令主名（tuple 取第一个）与描述，供 /help 等使用
+        # 回填元信息：命令主名（tuple 取第一个）、描述、别名与可见性，供 /help 等使用
         parent.meta["command"] = cmd_list[0]
         parent.meta["description"] = description
+        parent.meta["aliases"] = list(cmd_list[1:])
+        parent.meta["hidden_in_help"] = bool(hidden_in_help)
         if args_schema:
             parent.meta["args_schema"] = dict(args_schema)
         _collect_module_matcher(parent)

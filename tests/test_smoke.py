@@ -15,6 +15,7 @@ from qingci_plugin_sdk import (
     PluginBase,
     PluginStatus,
     llm_tool,
+    on_command,
     on_startswith,
     parse_event,
     parse_notice_event,
@@ -123,6 +124,24 @@ def test_on_startswith_builds_matcher():
     assert matcher.event_type == "message"
     assert matcher.permission == EVERYONE
     assert matcher.block is True
+
+
+def test_on_command_meta_aliases_and_hidden():
+    """on_command 元信息：主命令名 + aliases + hidden_in_help（供宿主 /help 展示/过滤）"""
+
+    def handler(ctx):
+        return "ok"
+
+    m = on_command("ping", aliases=("p", "pong"), description="测通", hidden_in_help=True)(handler)
+    assert m.meta["command"] == "ping"
+    assert m.meta["description"] == "测通"
+    assert m.meta["aliases"] == ["p", "pong"]
+    assert m.meta["hidden_in_help"] is True
+
+    # 默认：无别名、可见
+    m2 = on_command("help")(handler)
+    assert m2.meta["aliases"] == []
+    assert m2.meta["hidden_in_help"] is False
 
 
 def test_parse_notice_group_increase():

@@ -4,6 +4,13 @@
 
 SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
 
+## [1.13.5] - 2026-08-22（命令元信息：别名与 help 可见性）
+
+### Added
+
+- **`on_command` 新增 `hidden_in_help` 参数**：置 True 的命令不出现在宿主 `/help` 列表（用于内部/调试命令），`meta["hidden_in_help"]` 随之写入
+- **`meta["aliases"]` 记录完整命令别名**：`on_command("ping", aliases=("p","pong"))` 后 `meta["aliases"] == ["p","pong"]`（此前只进匹配规则，宿主 `/help` 无法展示别名）
+
 ## [1.13.4] - 2026-08-22（SDK 代码审阅报告修复）
 
 ### Fixed
