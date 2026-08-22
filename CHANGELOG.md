@@ -4,6 +4,13 @@
 
 SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
 
+## [1.13.3] - 2026-08-22（跨协议一致性修复）
+
+### Fixed
+
+- **v11 notice 翻译白名单丢扩展字段**：`translate_v11_event` 对 notice 仅拷贝 `["duration","target_id","file","message_id"]`，`honor_type` / `card_new` / `card_old` / `operation` 等扩展通知字段被丢弃——同一类通知事件在 OB11 与 OB12/Telegram（原生构造携带全部字段）形状不同。现改为拷贝除已规范化结构键外的全部原始键，OB11 与其它协议端字段一致
+- **`RateLimiter` 键类型与事件链矛盾**：`check(user_id: int)` 注解与 `dict[int,...]` 存储，但事件链中 `user_id` 统一为 str（三端均传 str）。现 `check` 接受 `str | int` 并按 str 存储，类型注解与实参一致（str/int 命中同一计数桶）
+
 ## [1.13.2] - 2026-08-21
 
 ### Added

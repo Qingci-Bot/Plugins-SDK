@@ -474,6 +474,25 @@ def parse_v12_event(raw: dict) -> NoticeEvent | RequestEvent | None:
 
 # ============ v11 -> v12 事件翻译（协议映射单一来源） ============
 
+# notice 翻译时已由 _base_fields 规范化/显式设置的键，其余原始键一律保留
+_NOTICE_STRUCT_KEYS = frozenset(
+    {
+        "type",
+        "detail_type",
+        "sub_type",
+        "id",
+        "impl",
+        "platform",
+        "self_id",
+        "time",
+        "post_type",
+        "notice_type",
+        "user_id",
+        "group_id",
+        "operator_id",
+    }
+)
+
 
 def translate_v11_event(event: dict, *, impl: str = "") -> dict[str, Any]:
     """OneBot 11 事件 dict -> OneBot 12 事件 dict（平台无关）
@@ -538,10 +557,11 @@ def translate_v11_event(event: dict, *, impl: str = "") -> dict[str, Any]:
                 "operator_id": str(event.get("operator_id", "") or ""),
             }
         )
-        # 携带 v11 原始通知字段，供 LLM 事件缓冲等读取
-        for key in ("duration", "target_id", "file", "message_id"):
-            if key in event:
-                v12[key] = event[key]
+        # 携带 v11 原始通知字段，供 LLM 事件缓冲等读取；
+        # 拷贝除已规范化结构键外的全部原始键（保留 honor_type /
+        # card_new / card_old / operation / duration / target_id /
+        # file / message_id 等扩展字段），避免 OB11 独缺扩展通知字段。
+        v12.update({key: value for key, value in event.items() if key not in _NOTICE_STRUCT_KEYS})
         return v12
 
     if post_type == "request":

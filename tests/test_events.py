@@ -105,6 +105,40 @@ def test_translate_notice_keeps_extra_fields():
     assert v12["message_id"] == 88  # 原始字段原样携带
 
 
+def test_translate_notice_keeps_extended_fields():
+    """OB11 扩展通知字段（honor/card/operation 等）不应在翻译时被丢弃"""
+    v12 = translate_v11_event(
+        {
+            "post_type": "notice",
+            "notice_type": "group_honor",
+            "sub_type": "honor",
+            "user_id": 10001,
+            "group_id": 20001,
+            "honor_type": "talkative",
+            "target_id": 10002,
+        }
+    )
+    assert v12["detail_type"] == "group_honor"
+    assert v12["honor_type"] == "talkative"
+    assert v12["target_id"] == 10002
+    # 结构键仍保持已规范化形态
+    assert v12["type"] == "notice"
+    assert v12["user_id"] == "10001"
+
+    card = translate_v11_event(
+        {
+            "post_type": "notice",
+            "notice_type": "group_card",
+            "user_id": 10001,
+            "group_id": 20001,
+            "card_new": "新名片",
+            "card_old": "旧名片",
+        }
+    )
+    assert card["card_new"] == "新名片"
+    assert card["card_old"] == "旧名片"
+
+
 # ============ request / meta ============
 
 

@@ -10,17 +10,22 @@ class RateLimiter:
     def __init__(self, daily_limit: int = 50, cooldown_seconds: int = 10):
         self.daily_limit = daily_limit
         self.cooldown_seconds = cooldown_seconds
-        self._data: dict[int, tuple[str, int, float]] = {}
+        # 事件链中 user_id 统一为 str（v12 模型字符串化），键按 str 存储
+        self._data: dict[str, tuple[str, int, float]] = {}
 
-    def check(self, user_id: int) -> tuple[bool, str]:
+    def check(self, user_id: str | int) -> tuple[bool, str]:
         """检查用户是否允许本次调用
+
+        Args:
+            user_id: 用户 ID（str / int 均可，统一按 str 存储）
 
         Returns:
             (ok, reason): ok 为 True 时放行并计数；为 False 时 reason 为提示文案
         """
+        key = str(user_id)
         now = time.time()
         today = date.today().isoformat()
-        record = self._data.get(user_id)
+        record = self._data.get(key)
 
         if record is None or record[0] != today:
             count = 0
@@ -35,7 +40,7 @@ class RateLimiter:
         if self.cooldown_seconds > 0 and last_ts and now - last_ts < self.cooldown_seconds:
             return False, f"发送太快啦，请 {self.cooldown_seconds} 秒后再试。"
 
-        self._data[user_id] = (today, count + 1, now)
+        self._data[key] = (today, count + 1, now)
         return True, ""
 
     def cleanup(self, inactive_days: int = 7) -> int:
