@@ -1028,6 +1028,15 @@ async def weather(ctx, city: str = "", days: int = 1) -> str:
     return f"{city}: {days} 天预报"
 ```
 
+**help 可见性（1.13.5）：** `hidden_in_help=True` 的命令不出现在宿主 `/help` 列表（用于内部/调试命令）；`meta["aliases"]` 记录完整命令别名（`meta["hidden_in_help"]` 亦写入），供宿主 `/help` 展示与过滤。
+
+```python
+# 内部调试命令，不在 /help 显示
+on_command("debug", hidden_in_help=True)(handler)
+# 注册后：meta["aliases"] == ["帮助", "h"]，meta["hidden_in_help"] == True
+on_command("help", aliases=("帮助", "h"), hidden_in_help=True)(handler)
+```
+
 #### 全局生命周期钩子（1.4.0）
 
 插件可覆写以下钩子参与 Bot 生命周期（默认空实现）：
