@@ -505,6 +505,8 @@ async def on_group_request(ctx: MatcherContext, event: GroupRequestEvent) -> boo
 | 加群请求 | `GroupRequestEvent` | `group_id`, `comment`, `flag` |
 | 加好友请求 | `FriendRequestEvent` | `comment`, `flag` |
 
+> **导入说明**：上表中**基础通知/请求类**（`GroupIncreaseNotice` / `GroupDecreaseNotice` 等）已由包根 `__init__.py` 导出，可直接 `from qingci_plugin_sdk import ...`。而**扩展通知类**（`FriendPokeNotice` / `GroupLuckyKingNotice` / `GroupHonorChangeNotice` / `GroupCardNotice` / `GroupEssenceNotice` / `GroupSignInNotice`）定义在 `qingci_plugin_sdk.events` 中、**尚未从包根导出**，当前需显式 `from qingci_plugin_sdk.events import FriendPokeNotice` 等方式导入（后续版本会补上包根导出）。
+
 **特性：**
 - 未知 `notice_type` 回退通用基类 `NoticeEvent`/`RequestEvent`（通用字段仍类型化）
 - 数值字段安全转换（字符串 `"123"` 自动转 int，非法值回退默认，不抛异常）
