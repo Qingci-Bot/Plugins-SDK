@@ -115,8 +115,8 @@ class PluginBase(ABC):
     def data_dir(self) -> Path:
         """插件专属数据目录（自动创建，建议用于持久化文件数据）
 
-        路径约定：data_root()/plugins/<name>/，卸载不删除，
-        供插件存储运行时数据（缓存、导出文件等）。
+        路径约定：data_root()/plugins/<name>/；宿主卸载插件默认保留该目录，
+        仅宿主「彻底删除（purge）」时删除，供插件存储运行时数据（缓存、导出文件等）。
         """
         from .paths import data_root
 
