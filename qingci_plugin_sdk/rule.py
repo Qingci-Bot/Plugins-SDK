@@ -223,26 +223,23 @@ def is_group() -> Rule:
     return Rule(lambda bot, event, ctx: ctx.message_type == "group")
 
 
-def _is_word_boundary(ch: str) -> bool:
-    return not (ch.isascii() and ch.isalnum())
-
-
 def keyword(*kws: str) -> Rule:
-    """关键词触发规则"""
+    """关键词触发规则（词边界：关键词前后不能被 ASCII 字母/数字紧邻）
+
+    多关键词预编译为单条正则：用否定 lookaround 表达「词边界」（CJK 等非
+    ASCII 一律视为边界，恰与原逐字符 _is_word_boundary 语义一致）。每条消息
+    只做一次正则扫描，避免逐个关键词 find 的线性多遍开销。
+    """
     if not kws:
         raise ValueError("至少需要一个关键词")
 
-    async def checker(bot, event, ctx: MessageContext) -> bool:
-        text = ctx.plain_text
-        for kw in kws:
-            idx = text.find(kw)
-            while idx != -1:
-                before = text[idx - 1] if idx > 0 else " "
-                after = text[idx + len(kw)] if idx + len(kw) < len(text) else " "
-                if _is_word_boundary(before) and _is_word_boundary(after):
-                    return True
-                idx = text.find(kw, idx + 1)
-        return False
+    # (?<![A-Za-z0-9])：其左不是 ascii 字母/数字（含字符串开头）=> 边界
+    # (?![A-Za-z0-9]) ：其右不是 ascii 字母/数字（含字符串结尾）=> 边界
+    pattern = "|".join(f"(?<![A-Za-z0-9]){re.escape(kw)}(?![A-Za-z0-9])" for kw in kws)
+    compiled = re.compile(pattern)
+
+    def checker(bot, event, ctx: MessageContext) -> bool:
+        return compiled.search(ctx.plain_text) is not None
 
     return Rule(checker)
 

@@ -101,11 +101,7 @@ class MessageContext:
             detail_type=str(raw.get("detail_type", "")),
             event_id=str(raw.get("id", "")),
             platform=str(raw.get("platform", "") or "onebot"),
-            self_id=str(
-                raw.get("self_id", "")
-                or (raw.get("self") or {}).get("user_id", "")
-                or ""
-            ),
+            self_id=str(raw.get("self_id", "") or (raw.get("self") or {}).get("user_id", "") or ""),
             message_id=str(raw.get("message_id", "") or ""),
             user_id=str(raw.get("user_id", "") or ""),
             group_id=str(raw.get("group_id", "") or ""),
