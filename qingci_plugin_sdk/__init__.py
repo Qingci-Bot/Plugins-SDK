@@ -7,7 +7,7 @@
     uv pip install -e .    # 从 Plugins-SDK 目录
 """
 
-__version__ = "1.13.6"
+__version__ = "1.13.7"
 
 from .base import PluginBase, PluginStatus
 from .context import MessageContext
