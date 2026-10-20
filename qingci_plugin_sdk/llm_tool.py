@@ -50,8 +50,9 @@ class LlmToolSpec:
     parameters: dict = field(default_factory=lambda: {"type": "object", "properties": {}})
 
 
-# 模块级工具收集栈：插件加载时设置，收集到的工具关联到当前插件
-_tool_collector: list[LlmToolSpec] | None = None
+# 模块级工具收集栈：插件加载时压栈，收集到的工具关联到当前插件。
+# 用栈保证嵌套加载时内层 end 不会丢弃外层已收集的工具。
+_collector_stack: list[list[LlmToolSpec]] = []
 _tool_lock = threading.Lock()
 
 
@@ -87,23 +88,23 @@ def llm_tool(
             parameters=parameters or {"type": "object", "properties": {}},
         )
         with _tool_lock:
-            if _tool_collector is not None:
-                _tool_collector.append(spec)
+            if _collector_stack:
+                _collector_stack[-1].append(spec)
         return func
 
     return decorator
 
 
 def begin_tool_collection() -> list[LlmToolSpec]:
-    """开始收集模块级 LLM 工具，返回收集列表"""
-    global _tool_collector
+    """开始收集模块级 LLM 工具，返回本次收集列表（可嵌套）"""
+    collector: list[LlmToolSpec] = []
     with _tool_lock:
-        _tool_collector = []
-        return _tool_collector
+        _collector_stack.append(collector)
+    return collector
 
 
 def end_tool_collection():
-    """结束收集"""
-    global _tool_collector
+    """结束最近一次收集（仅弹出栈顶，不影响外层收集器）"""
     with _tool_lock:
-        _tool_collector = None
+        if _collector_stack:
+            _collector_stack.pop()

@@ -99,6 +99,9 @@ class MessageContext:
             raw_event=dict(raw),
             type=str(raw.get("type", "")),
             detail_type=str(raw.get("detail_type", "")),
+            # v11 兼容字段：v12 事件同样携带 sub_type（normal / anonymous 等），
+            # 此前漏赋值导致该字段在 v12 链路恒为空串。
+            sub_type=str(raw.get("sub_type", "") or ""),
             event_id=str(raw.get("id", "")),
             platform=str(raw.get("platform", "") or "onebot"),
             self_id=str(raw.get("self_id", "") or (raw.get("self") or {}).get("user_id", "") or ""),
@@ -128,5 +131,4 @@ class MessageContext:
         ctx.images = msg.images()
         if ctx.at_list:
             ctx.is_at_bot = ctx.self_id in ctx.at_list
-        # 补充时间字段到 raw_event（v12 用 float，秒）
         return ctx

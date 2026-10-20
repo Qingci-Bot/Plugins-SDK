@@ -87,3 +87,27 @@ def test_max_entries_default_is_large():
     for i in range(1000):
         assert limiter.check(str(i))[0] is True
     assert len(limiter._data) == 1000
+
+
+def test_repeated_check_of_existing_key_does_not_evict_others():
+    """容量触顶时已有键的重复调用不得驱逐他人
+
+    回归：此前淘汰发生在「判断键是否存在」之前，单个高频用户反复 check
+    即可逐条清空整张限流表。
+    """
+    limiter = RateLimiter(daily_limit=100, cooldown_seconds=0, max_entries=3)
+    for uid in ("u1", "u2", "u3"):
+        limiter.check(uid)
+    for _ in range(5):
+        limiter.check("u1")
+    assert set(limiter._data) == {"u1", "u2", "u3"}
+
+
+def test_rejected_check_does_not_evict_others():
+    """被限流拒绝的调用同样不得触发淘汰"""
+    limiter = RateLimiter(daily_limit=1, cooldown_seconds=0, max_entries=2)
+    limiter.check("a")
+    limiter.check("b")
+    ok, _ = limiter.check("a")  # 超当日上限，被拒
+    assert ok is False
+    assert set(limiter._data) == {"a", "b"}

@@ -280,11 +280,306 @@ def test_llm_tool_rejects_class_methods():
 
     llm_tool_module.begin_tool_collection()
     try:
-        specs = [
-            s for s in (llm_tool_module._tool_collector or []) if s.name == "should_not_collect"
-        ]
+        specs = [s for s in llm_tool_module._collector_stack[-1] if s.name == "should_not_collect"]
         assert specs == []
     finally:
         llm_tool_module.end_tool_collection()
     # 装饰器仍返回原函数，不影响类本身
     assert callable(decorated)
+
+
+def test_require_isolated_between_plugins():
+    """require 默认列表按插件类隔离，避免 self.require.append 污染其他插件"""
+
+    class PluginA(PluginBase):
+        name = "a"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    class PluginB(PluginBase):
+        name = "b"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    a, b = PluginA(), PluginB()
+    a.require.append("dep")
+    assert PluginA.require == ["dep"]
+    assert b.require == []
+    assert PluginBase.require == []
+
+    # 子类显式声明 require 时保持自己的列表，不受父类影响
+    class PluginC(PluginA):
+        name = "c"
+        require = ["chat"]
+
+    assert PluginC.require == ["chat"]
+    assert PluginA.require == ["dep"]
+
+
+def test_all_entries_are_importable():
+    """__all__ 中的每个符号都必须真实存在于包命名空间（导出面一致性）"""
+    assert [name for name in sdk.__all__ if not hasattr(sdk, name)] == []
+
+
+def test_extended_notice_and_adapter_symbols_exported():
+    """扩展通知类与适配器辅助函数必须走包级导出（CODING_STANDARDS §4）"""
+    names = (
+        "FriendPokeNotice",
+        "GroupLuckyKingNotice",
+        "GroupHonorChangeNotice",
+        "GroupCardNotice",
+        "GroupEssenceNotice",
+        "GroupSignInNotice",
+        "translate_v11_event",
+        "parse_cq_string",
+    )
+    for name in names:
+        assert name in sdk.__all__, name
+        assert hasattr(sdk, name), name
+
+
+def test_nested_tool_collection_keeps_outer_specs():
+    """嵌套收集：内层 end 不丢弃外层已收集的 LLM 工具"""
+    from qingci_plugin_sdk.llm_tool import begin_tool_collection, end_tool_collection
+
+    outer = begin_tool_collection()
+    try:
+
+        @llm_tool(description="外层工具")
+        def outer_tool() -> str:
+            return "o"
+
+        inner = begin_tool_collection()
+        try:
+
+            @llm_tool(description="内层工具")
+            def inner_tool() -> str:
+                return "i"
+
+            assert [s.name for s in inner] == ["inner_tool"]
+        finally:
+            end_tool_collection()
+
+        @llm_tool(description="外层工具 2")
+        def outer_tool2() -> str:
+            return "o2"
+
+        assert [s.name for s in outer] == ["outer_tool", "outer_tool2"]
+    finally:
+        end_tool_collection()
+
+
+def test_data_dir_cached_and_invalidated(tmp_path, monkeypatch):
+    """data_dir 按 (数据根, 插件名) 缓存，避免每次访问都执行 mkdir"""
+    from pathlib import Path as _Path
+
+    from qingci_plugin_sdk import paths
+
+    monkeypatch.setattr(paths, "data_root", lambda: tmp_path)
+
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    mkdir_calls: list[_Path] = []
+    real_mkdir = _Path.mkdir
+
+    def counting_mkdir(self, *args, **kwargs):
+        mkdir_calls.append(self)
+        return real_mkdir(self, *args, **kwargs)
+
+    monkeypatch.setattr(_Path, "mkdir", counting_mkdir)
+
+    p = DemoPlugin()
+    first = p.data_dir
+    # 首次访问需创建 plugins/ 与 plugins/<name>/（parents=True 会逐级调用）
+    assert first == tmp_path / "plugins" / "demo"
+    assert first.is_dir()
+    first_calls = len(mkdir_calls)
+    assert first_calls >= 1
+
+    second = p.data_dir
+    assert second == first
+    assert len(mkdir_calls) == first_calls  # 第二次访问命中缓存，不再 mkdir
+
+    # 宿主切换数据根（set_data_root）后缓存自动失效
+    other = tmp_path / "other-root"
+    other.mkdir(parents=True)
+    monkeypatch.setattr(paths, "data_root", lambda: other)
+    mkdir_calls.clear()
+    assert p.data_dir == other / "plugins" / "demo"
+    assert len(mkdir_calls) >= 1
+
+    # 插件名变更同样失效（缓存键含插件名）
+    p.name = "renamed"
+    assert p.data_dir == other / "plugins" / "renamed"
+
+
+def test_enabled_setter_ignores_invalid_transitions():
+    """ERROR / UNLOADING 等状态下 enabled 赋值不改变状态（避免误复活）"""
+
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    p = DemoPlugin()
+    p._status = PluginStatus.ERROR
+    p.enabled = True
+    assert p.status == PluginStatus.ERROR
+    p.enabled = False
+    assert p.status == PluginStatus.ERROR
+
+
+def test_middleware_registration_is_idempotent():
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    p = DemoPlugin()
+
+    async def before(matcher, ctx):
+        return None
+
+    async def after(matcher, ctx, result):
+        return None
+
+    p.register_before(before)
+    p.register_before(before)
+    p.register_after(after)
+    p.register_after(after)
+    assert p._before_handlers == [before]
+    assert p._after_handlers == [after]
+
+
+def test_register_page_records_static_dir(tmp_path):
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    p = DemoPlugin()
+    p.register_page("管理", icon="◆", static_dir=str(tmp_path))
+    assert p._pages == [{"title": "管理", "icon": "◆", "static_dir": str(tmp_path)}]
+
+
+def test_register_page_auto_detects_web_dir(tmp_path, monkeypatch):
+    """未传 static_dir 时自动探测插件模块同级的 web/ 目录"""
+    import importlib
+    import types
+
+    (tmp_path / "web").mkdir()
+    fake_module = types.SimpleNamespace(__file__=str(tmp_path / "plugin.py"))
+    monkeypatch.setattr(importlib, "import_module", lambda name: fake_module)
+
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    p = DemoPlugin()
+    p.register_page("管理")
+    assert p._pages[-1]["static_dir"] == str(tmp_path / "web")
+
+
+def test_get_exports_returns_dependency_exports():
+    import types
+
+    class DepPlugin(PluginBase):
+        name = "dep"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    class HostPlugin(PluginBase):
+        name = "host"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    dep = DepPlugin()
+    dep.export("api", 42)
+    host = HostPlugin()
+    host.bot = types.SimpleNamespace(plugin_manager={"dep": dep})
+    assert host.get_exports("dep") == {"api": 42}
+
+
+def test_get_exports_raises_when_uninitialized():
+    import pytest
+
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    with pytest.raises(RuntimeError, match="未初始化"):
+        DemoPlugin().get_exports("dep")
+
+
+async def test_lifecycle_hooks_default_to_noop():
+    class DemoPlugin(PluginBase):
+        name = "demo"
+
+        async def on_load(self):
+            pass
+
+        async def on_unload(self):
+            pass
+
+    p = DemoPlugin()
+    assert await p.on_startup() is None
+    assert await p.on_shutdown() is None
+    assert await p.on_bot_connect() is None
+    assert await p.on_metaevent({}) is None
+    assert await p.on_disable() is None
+    assert await p.on_enable() is None
+    assert await p.on_message(MessageContext()) is None
+    assert await p.on_notice({}) is None
+    assert await p.on_request({}) is None
+
+
+def test_py_typed_marker_present():
+    """PEP 561：源码树与 wheel 都必须携带 py.typed"""
+    from pathlib import Path
+
+    assert (Path(sdk.__file__).parent / "py.typed").is_file()

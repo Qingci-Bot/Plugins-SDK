@@ -2,35 +2,96 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: [main]
   pull_request:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # 严格按 uv.lock 安装：锁文件与 pyproject 不一致时直接失败，避免版本漂移
+  UV_FROZEN: "1"
+
 jobs:
-  quality:
-    name: Lint / Type / Test
+  lint:
+    name: Lint / Type
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
         with:
-          python-version: "3.12"
-          cache: pip
+          enable-cache: true
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
+      - name: Install (with dev extras)
+        run: uv sync --extra dev
 
       - name: Lint (ruff)
-        run: ruff check .
+        run: uv run --no-sync ruff check .
 
       - name: Format check (ruff)
-        run: ruff format --check .
+        run: uv run --no-sync ruff format --check .
 
       - name: Type check (mypy)
-        run: mypy qingci_plugin_sdk
+        run: uv run --no-sync mypy qingci_plugin_sdk
 
-      - name: Test (pytest)
-        run: pytest -q
+  test:
+    name: Test (py${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # requires-python 声明 >=3.10，需覆盖声明区间的每个版本
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv (py${{ matrix.python-version }})
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Install (with dev extras)
+        run: uv sync --extra dev
+
+      - name: Test (coverage gate)
+        run: uv run --no-sync pytest -q --cov --cov-report=term-missing --cov-fail-under=90
+
+  build:
+    name: Build / Install smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+      - name: Build sdist + wheel
+        run: uv build
+
+      - name: Verify wheel contents
+        run: |
+          python3 - <<'PY'
+          import glob
+          import zipfile
+
+          whl = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(whl).namelist()
+          # tests/ 与 plugins/（含 _template）不得进入 wheel：
+          # 顶层 plugins 包会在下游 site-packages 与宿主插件目录冲突
+          leaked = [n for n in names if n.startswith(("plugins/", "tests/"))]
+          assert not leaked, f"wheel 不应包含 {leaked}"
+          assert "qingci_plugin_sdk/py.typed" in names, "wheel 缺少 PEP 561 py.typed 标记"
+          print(f"{whl}: {len(names)} entries, py.typed OK, 无 tests/plugins 泄漏")
+          PY
+
+      - name: Install wheel in clean environment
+        run: |
+          uv venv /tmp/verify
+          uv pip install --python /tmp/verify/bin/python dist/*.whl
+          /tmp/verify/bin/python -c "import qingci_plugin_sdk as s; print('installed', s.__version__)"

@@ -1,11 +1,16 @@
 """用户级限流器 — 插件 SDK 独立版本"""
 
 import time
+from collections import OrderedDict
 from datetime import date
 
 
 class RateLimiter:
-    """基于内存 dict 的限流器：{user_id: (日期字符串, 当日计数, 上次成功时间戳)}"""
+    """基于内存 dict 的限流器：{user_id: (日期字符串, 当日计数, 上次成功时间戳)}
+
+    内部用 OrderedDict 维护「最近成功调用」顺序（LRU），容量触顶时 O(1)
+    淘汰最久未活动者，避免洪泛场景下 O(n) 扫描退化为 O(n²)。
+    """
 
     def __init__(
         self,
@@ -16,18 +21,16 @@ class RateLimiter:
     ):
         self.daily_limit = daily_limit
         self.cooldown_seconds = cooldown_seconds
-        # 容量上限：防长期运行内存无界膨胀。达上限时写入前淘汰最早活动者
-        # （对冲大集群 / 脏键堆积），O(n) 扫描仅在触顶时发生，正常路径零开销。
+        # 容量上限：防长期运行内存无界膨胀。仅在「新键写入」且已触顶时淘汰
+        # 最久未活动者（对冲大集群 / 脏键堆积）；max_entries <= 0 表示不设上限。
         self.max_entries = max_entries
         # 事件链中 user_id 统一为 str（v12 模型字符串化），键按 str 存储
-        self._data: dict[str, tuple[str, int, float]] = {}
+        self._data: OrderedDict[str, tuple[str, int, float]] = OrderedDict()
 
     def _evict_oldest(self) -> None:
-        """淘汰最早活动的键以守住容量上限"""
-        if not self._data:
-            return
-        oldest = min(self._data, key=lambda k: self._data[k][2])
-        del self._data[oldest]
+        """淘汰最久未活动的键以守住容量上限（OrderedDict 头部即最旧）"""
+        if self._data:
+            self._data.popitem(last=False)
 
     def check(self, user_id: str | int) -> tuple[bool, str]:
         """检查用户是否允许本次调用
@@ -50,8 +53,10 @@ class RateLimiter:
             count = record[1]
             last_ts = record[2]
 
-        # 触顶优先留守最新活动者：先淘汰最旧，再写入/计数
-        if len(self._data) >= self.max_entries:
+        # 触顶且为「新键」时才淘汰最久未活动者。已有键的重复调用（含被限流
+        # 拒绝的调用）不得驱逐他人，否则单个高频用户反复 check 即可逐条清空
+        # 整张表，限流失效。
+        if record is None and self.max_entries > 0 and len(self._data) >= self.max_entries:
             self._evict_oldest()
 
         if count >= self.daily_limit:
@@ -61,6 +66,8 @@ class RateLimiter:
             return False, f"发送太快啦，请 {self.cooldown_seconds} 秒后再试。"
 
         self._data[key] = (today, count + 1, now)
+        # 刷新活动顺序：最近成功调用者移到尾部，头部即最久未活动者（O(1)）
+        self._data.move_to_end(key)
         return True, ""
 
     def cleanup(self, inactive_days: int = 7) -> int:

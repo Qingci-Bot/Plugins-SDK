@@ -151,3 +151,34 @@ def test_no_collection_when_collector_inactive():
         return ""
 
     assert solo.event_type == "message"
+
+
+def test_nested_collection_keeps_outer_matchers():
+    """嵌套收集：内层 end 只弹出自己的收集器，不丢外层已收集的 matcher"""
+    outer = begin_module_collection()
+    try:
+
+        @on_command("outer")
+        async def outer_cmd(ctx):
+            return ""
+
+        inner = begin_module_collection()
+        try:
+
+            @on_command("inner")
+            async def inner_cmd(ctx):
+                return ""
+
+            assert len(inner) == 1
+        finally:
+            end_module_collection()
+
+        # 内层结束后外层仍可继续收集，且已收集项不受影响
+        @on_command("outer2")
+        async def outer_cmd2(ctx):
+            return ""
+
+        assert [m.meta["command"] for m in outer] == ["outer", "outer2"]
+        assert inner[0].meta["command"] == "inner"
+    finally:
+        end_module_collection()

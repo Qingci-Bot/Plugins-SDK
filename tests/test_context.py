@@ -130,3 +130,19 @@ def test_empty_event_defaults():
     assert ctx.plain_text == ""
     assert ctx.message_type == ""
     assert ctx.segments == []
+
+
+def test_from_v12_event_keeps_sub_type():
+    """v12 事件的 sub_type 必须落到上下文（此前漏赋值，恒为空串）"""
+    ctx = MessageContext.from_v12_event(_v12_message([{"type": "text", "data": {"text": "hi"}}]))
+    assert ctx.sub_type == "normal"
+
+    anon = MessageContext.from_v12_event(
+        _v12_message([{"type": "text", "data": {"text": "hi"}}], sub_type="anonymous")
+    )
+    assert anon.sub_type == "anonymous"
+
+    # 事件缺省 sub_type 时保持空串（不引入 None）
+    raw = _v12_message([{"type": "text", "data": {"text": "hi"}}])
+    raw.pop("sub_type")
+    assert MessageContext.from_v12_event(raw).sub_type == ""

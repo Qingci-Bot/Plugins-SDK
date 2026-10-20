@@ -4,6 +4,46 @@
 
 SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
 
+## [1.13.8] - 2026-10-20（P0 缺陷修复 + P1 性能 + P2 打包与 CI）
+
+### Added
+
+- **PEP 561 类型标记（P2）**：新增 `qingci_plugin_sdk/py.typed` 并纳入 `package-data`。此前下游插件工程以非 editable 方式安装后，mypy 无法获取本包类型信息（退化为 `Any`）
+- **完整的打包元数据（P2）**：`pyproject.toml` 补 `readme` / `authors` / `keywords` / `classifiers`（Python 3.10–3.13、`Typing :: Typed`）/ `[project.urls]`（Homepage / Repository / Issues / Changelog），并启用 PEP 639 SPDX 许可表达式（`license-files`，构建后端升至 setuptools>=77）
+- **CI 构建与安装冒烟（P2）**：新增 `build` job，构建 sdist + wheel 后校验 wheel 内容（禁止 `tests/`、`plugins/` 泄漏，必须含 `py.typed`），并在干净虚拟环境安装 wheel 后导入验证
+
+### Changed
+
+- **版本单一来源（P2）**：`pyproject.toml` 改为 `dynamic = ["version"]`，从 `qingci_plugin_sdk.__version__` 静态读取，消除两处版本号双写漂移
+- **wheel 不再打包 `tests/` 与 `plugins/`（P2）**：此前 `packages.find` 未限定范围，wheel 会把顶层 `plugins` 包（含 `_template`）装进下游 `site-packages`，与宿主插件目录同名冲突；现限定 `include = ["qingci_plugin_sdk*"]`，wheel 由 26 项降至 19 项
+- **事件解析按类缓存字段类型（P1）**：`parse_notice_event` 此前每次调用都执行 `get_type_hints`（约 83µs，占单次解析 95%）。现按事件类缓存解析结果，单次解析 87µs → 约 1.4µs（实测 1 万次：871ms → 14ms）
+- **`PluginBase.data_dir` 缓存目录解析（P1）**：此前每次访问都执行 `mkdir`（实测约 111µs），handler 内多次读取会拖慢消息处理。现按 (数据根, 插件名) 缓存，`set_data_root()` 切换或插件名变更时自动失效（实测 111µs → 约 0.4µs）
+- **CI 重构（P2）**：改用 uv + `uv.lock` 严格安装（`UV_FROZEN=1`）；测试矩阵覆盖 3.10 / 3.11 / 3.12 / 3.13（此前仅 3.12，与 `requires-python >= 3.10` 不匹配）；新增 90% 分支覆盖率门槛；`push` 仅监听 `main` 并加 concurrency 取消，避免重复跑
+
+### Fixed
+
+- **限流表容量触顶时误淘汰他人（P0）**：`RateLimiter.check()` 此前在判断键是否存在之前执行淘汰，已有用户的每次调用都会驱逐一个无关用户——单个高频用户反复触发即可逐条清空整张限流表；被限流拒绝的调用同样触发淘汰。现仅在「新键写入且已触顶」时淘汰最久未活动者；内部结构改为 `OrderedDict` + `move_to_end`，淘汰由 O(n) `min()` 扫描降为 O(1) `popitem`，消除洪泛场景下的 O(n²) 退化（`max_entries <= 0` 表示不设上限）
+- **`MessageContext.from_v12_event` 丢失 `sub_type`（P0）**：v12 归一化链路未给该兼容字段赋值，插件读取 `ctx.sub_type` 恒为空串（v11 链路正常）。现从事件原样读取，缺省保持空串；同时移除关于 time 字段的悬空注释
+- **`PluginBase.require` 跨插件共享（P0）**：类级默认值为可变 list，任一插件执行 `self.require.append(...)` 会污染同进程其他插件类。新增 `__init_subclass__`，为未显式声明 `require` 的子类复制独立列表（显式声明的保持不变）
+- **包级导出缺口（P0）**：`FriendPokeNotice` / `GroupLuckyKingNotice` / `GroupHonorChangeNotice` / `GroupCardNotice` / `GroupEssenceNotice` / `GroupSignInNotice` / `translate_v11_event` / `parse_cq_string` 未进 `qingci_plugin_sdk.__all__`，插件与适配器只能从子模块导入，违反 CODING_STANDARDS §4。现全部补入包级导出
+- **模块级收集器改为栈（P0）**：`begin_module_collection` / `begin_tool_collection` 原为单槽全局变量，嵌套加载（插件在 `on_load` 内加载/重载其他插件）时内层 `end` 会丢弃外层已收集的 matcher / LLM 工具。现改为栈，`end` 仅弹出栈顶；私有变量 `_matcher_collector` / `_tool_collector` 相应改为 `_collector_stack`（非公开 API）
+
+### Tests
+
+- 测试数 148 → 180，分支覆盖率 86% → 92%（新增 `test_i18n.py`、`test_paths.py`，补齐 `PluginBase` 的 `register_page` / `get_exports` / 中间件去重 / 生命周期默认实现 / `enabled` 非法转移）
+- 新增 10 条回归测试：限流重复调用 / 拒绝调用不误淘汰、v12 `sub_type` 透传、`require` 类间隔离、`__all__` 导出面一致性、嵌套 matcher / LLM 工具收集、事件注解缓存命中、`data_dir` 缓存与失效、`py.typed` 存在性
+
+## [1.13.7] - 2026-09-03（keyword 单正则扫描 + 限流容量上限）
+
+### Added
+
+- **核心模块测试**：补齐 matcher / rule / segments / session / permission / ratelimit / context / events 的单元测试
+
+### Changed
+
+- **`keyword()` 多关键词单次扫描**：多关键词预编译为单条正则（否定 lookaround 表达词边界，CJK 与非 ASCII 一律视为边界，与原逐字符判定语义一致），每条消息只做一次扫描，替代逐关键词 `find` 的多遍线性开销
+- **`RateLimiter` 新增 `max_entries` 容量上限**（默认 100000）：防长期运行内存无界膨胀，触顶时淘汰最早活动者
+
 ## [1.13.6] - 2026-08-23（OneBot 12 协议符合度：self_id 回退读取）
 
 ### Added

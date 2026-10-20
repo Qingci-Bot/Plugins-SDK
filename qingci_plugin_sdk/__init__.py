@@ -7,20 +7,26 @@
     uv pip install -e .    # 从 Plugins-SDK 目录
 """
 
-__version__ = "1.13.7"
+__version__ = "1.13.8"
 
 from .base import PluginBase, PluginStatus
 from .context import MessageContext
 from .events import (
     FriendAddNotice,
+    FriendPokeNotice,
     FriendRecallNotice,
     FriendRequestEvent,
     GroupAdminNotice,
     GroupBanNotice,
+    GroupCardNotice,
     GroupDecreaseNotice,
+    GroupEssenceNotice,
+    GroupHonorChangeNotice,
     GroupIncreaseNotice,
+    GroupLuckyKingNotice,
     GroupRecallNotice,
     GroupRequestEvent,
+    GroupSignInNotice,
     GroupUploadNotice,
     MessageEditedEvent,
     NoticeEvent,
@@ -32,6 +38,7 @@ from .events import (
     parse_notice_event,
     parse_request_event,
     parse_v12_event,
+    translate_v11_event,
 )
 from .i18n import I18n
 from .llm_tool import LlmToolSpec, begin_tool_collection, end_tool_collection, llm_tool
@@ -80,6 +87,7 @@ from .segments import (
     MessageSegment,
     SegmentType,
     normalize_v11_segment,
+    parse_cq_string,
     segments_to_v11,
     segments_to_v12,
     to_v11_segment,
@@ -106,6 +114,12 @@ __all__ = [
     "FriendAddNotice",
     "GroupUploadNotice",
     "PokeNotice",
+    "FriendPokeNotice",
+    "GroupLuckyKingNotice",
+    "GroupHonorChangeNotice",
+    "GroupCardNotice",
+    "GroupEssenceNotice",
+    "GroupSignInNotice",
     "MessageEditedEvent",
     "RequestEvent",
     "FriendRequestEvent",
@@ -114,12 +128,14 @@ __all__ = [
     "parse_notice_event",
     "parse_request_event",
     "parse_v12_event",
+    "translate_v11_event",
     "detail_type_to_notice_type",
     "notice_type_to_detail_type",
     # 消息段
     "SegmentType",
     "MessageSegment",
     "Message",
+    "parse_cq_string",
     "normalize_v11_segment",
     "to_v11_segment",
     "segments_to_v11",

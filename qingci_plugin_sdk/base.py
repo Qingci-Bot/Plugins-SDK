@@ -94,6 +94,20 @@ class PluginBase(ABC):
     _before_handlers: list[Any]
     _after_handlers: list[Any]
 
+    # data_dir 解析缓存：(数据根, 插件名) -> 已创建目录（避免每次访问都 mkdir）
+    _data_dir_cache: tuple[tuple[str, str], Path] | None = None
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """为每个插件类隔离 require 列表
+
+        `require` 默认值是类级可变对象（list）。若子类未重新声明，多个插件
+        会共享同一个列表，任一插件执行 `self.require.append(...)` 都会污染
+        同进程其他插件。此处为未显式声明 require 的子类复制一份独立列表。
+        """
+        super().__init_subclass__(**kwargs)
+        if "require" not in cls.__dict__:
+            cls.require = list(getattr(cls, "require", ()))
+
     def __init__(self):
         self._exports = {}
         self._pages = []
@@ -101,6 +115,7 @@ class PluginBase(ABC):
         self._before_handlers = []
         self._after_handlers = []
         self._status = PluginStatus.LOADING
+        self._data_dir_cache = None
         # 国际化：插件可声明 i18n/<locale>.json 翻译资源，self._ = self.i18n.t。
         # 注意：加载时不会自动 load_dir；需插件在 on_load 手动调用
         # self.i18n.load_dir(self.data_dir / "i18n") 加载（宿主不代办）。
@@ -117,11 +132,22 @@ class PluginBase(ABC):
 
         路径约定：data_root()/plugins/<name>/；宿主卸载插件默认保留该目录，
         仅宿主「彻底删除（purge）」时删除，供插件存储运行时数据（缓存、导出文件等）。
+
+        结果按 (数据根, 插件名) 缓存：mkdir 是系统调用，早期实现每次访问都执行
+        一次（实测约 110µs），handler 内多次读取会显著拖慢消息处理。宿主通过
+        set_data_root() 切换数据根或插件名变更时自动失效。
         """
         from .paths import data_root
 
-        d = data_root() / "plugins" / self.name
+        root = data_root()
+        cache_key = (str(root), self.name)
+        cached = self._data_dir_cache
+        if cached is not None and cached[0] == cache_key:
+            return cached[1]
+
+        d = root / "plugins" / self.name
         d.mkdir(parents=True, exist_ok=True)
+        self._data_dir_cache = (cache_key, d)
         return d
 
     # ---- 状态 ----

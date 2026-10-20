@@ -1,23 +1,75 @@
 [project]
 name = "qingci-plugin-sdk"
-version = "1.13.7"
+dynamic = ["version"]
 description = "Qingci-Bot 插件 SDK — 独立可安装的插件开发工具包"
+readme = "README.md"
 requires-python = ">=3.10"
 license = "GPL-3.0-or-later"
+license-files = ["LICENSE"]
+authors = [{ name = "luoqingci", email = "luoqingci@luoqingciya.com.cn" }]
+keywords = ["onebot", "onebot12", "qqbot", "chatbot", "plugin", "sdk"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Framework :: AsyncIO",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Communications :: Chat",
+    "Typing :: Typed",
+]
 dependencies = []
 
 [project.optional-dependencies]
-dev = ["pytest>=8", "pytest-asyncio>=0.23", "ruff>=0.6", "mypy>=1.10"]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+    "pytest-cov>=5",
+    "ruff>=0.6",
+    "mypy>=1.10",
+]
+
+[project.urls]
+Homepage = "https://github.com/Qingci-Bot/Plugins-SDK"
+Repository = "https://github.com/Qingci-Bot/Plugins-SDK"
+Issues = "https://github.com/Qingci-Bot/Plugins-SDK/issues"
+Changelog = "https://github.com/Qingci-Bot/Plugins-SDK/blob/main/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 
 [build-system]
-requires = ["setuptools>=75"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
+# 版本单一来源：从 qingci_plugin_sdk.__version__ 静态读取，避免与 pyproject 双写漂移
+[tool.setuptools.dynamic]
+version = { attr = "qingci_plugin_sdk.__version__" }
+
+# 只打包 SDK 包本身：tests/ 与 plugins/（含 _template）不得进入 wheel，
+# 否则会在下游 site-packages 里安装顶层 `plugins` 包，与宿主插件目录冲突
 [tool.setuptools.packages.find]
 where = ["."]
+include = ["qingci_plugin_sdk*"]
+
+# PEP 561 类型标记：下游插件工程安装后可直接获得本包的类型信息
+[tool.setuptools.package-data]
+qingci_plugin_sdk = ["py.typed"]
+
+[tool.coverage.run]
+source = ["qingci_plugin_sdk"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_lines = [
+    "pragma: no cover",
+    "if TYPE_CHECKING:",
+]
 
 [tool.ruff]
 target-version = "py310"

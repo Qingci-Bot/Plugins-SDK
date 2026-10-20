@@ -29,7 +29,7 @@
 | 包 / 模块 | 小写下划线 `snake_case` | `matcher.py`, `llm_tool.py` |
 | 类 | 大驼峰 `PascalCase` | `PluginBase`, `MatcherContext`, `LlmToolSpec` |
 | 函数 / 方法 / 变量 | 小写下划线 | `begin_module_collection`, `app_root` |
-| 私有成员 | 单下划线前缀 `_` | `_tool_collector`, `_collector_lock` |
+| 私有成员 | 单下划线前缀 `_` | `_collector_stack`, `_collector_lock` |
 | 常量 | 全大写 | `EVERYONE`, `SUPERUSER` |
 | 公开导出 | 收录进 `__init__.py` 的 `__all__` | `on_command`, `subcommand`, `llm_tool` |
 
@@ -43,14 +43,16 @@
 ## 5. 提交前检查
 
 ```bash
-# 在 Plugins-SDK/ 目录下运行（产物留在本目录内）
-ruff check qingci_plugin_sdk plugins   # 静态检查（配置见 pyproject.toml）
-ruff format --check qingci_plugin_sdk plugins   # 格式检查
-mypy qingci_plugin_sdk                # 类型检查（配置见 pyproject.toml）
-pytest                                # SDK 自测（tests/ 目录）
-python -m py_compile qingci_plugin_sdk/*.py   # 语法正确性兜底
+# 在 Plugins-SDK/ 目录下运行（产物留在本目录内），与 CI 一致
+uv run ruff check .                      # 静态检查（配置见 pyproject.toml）
+uv run ruff format --check .             # 格式检查
+uv run mypy qingci_plugin_sdk            # 类型检查（配置见 pyproject.toml）
+uv run pytest --cov --cov-fail-under=90  # SDK 自测 + 分支覆盖率门槛（tests/ 目录）
+uv build                                 # 构建校验（wheel 内容守卫见 CI build job）
 ```
 
+- CI 在 Python 3.10 / 3.11 / 3.12 / 3.13 上运行测试（`requires-python >= 3.10` 的完整声明区间）。
+- 新增公开符号必须同时补 `__all__` 与 `tests/test_smoke.py` 的导出面断言。
 - 提交信息使用 [Conventional Commits](https://www.conventionalcommits.org/)：`feat:` / `fix:` / `docs:` / `refactor:` / `chore:`。
 - 大改动同步更新 `CHANGELOG.md`（`[Unreleased]` 段）与 `README.md`。
 - 不提交产物与缓存（见 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) 产物归属约定）。

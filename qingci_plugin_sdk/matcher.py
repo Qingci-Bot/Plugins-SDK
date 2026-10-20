@@ -352,10 +352,11 @@ def on_request(
 
 # ============ 模块级 Matcher 收集 ============
 
-# 模块级 Matcher 收集栈：插件加载时设置，收集到的 matcher 关联到当前插件。
-# 用线程锁保护全局收集器，防御未来在 begin/end 之间引入 await 时两个并发
-# 加载（如 API 触发的 reload）交错污染全局变量。
-_matcher_collector: list | None = None
+# 模块级 Matcher 收集栈：插件加载时压栈，收集到的 matcher 关联到当前插件。
+# 用栈而非单槽全局变量，保证嵌套加载（插件在 on_load 内加载/重载其他插件）
+# 时内层 end 只弹出自己的收集器，不丢失外层已收集的 matcher。
+# 线程锁保护全局栈，防御 begin/end 之间引入 await 时并发加载交错污染。
+_collector_stack: list[list] = []
 _collector_lock = threading.Lock()
 
 
@@ -363,25 +364,25 @@ def _collect_module_matcher(matcher: Matcher):
     """收集模块级注册的 Matcher
 
     两种情况：
-    1. PluginManager 加载模块时设置了 _matcher_collector -> 收集到列表
+    1. PluginManager 加载模块时压入收集器 -> 收集到栈顶列表
     2. 插件在 on_load 中手动 self.matchers.append() -> 不收集（已是 Matcher 对象）
     """
     with _collector_lock:
-        if _matcher_collector is not None:
-            _matcher_collector.append(matcher)
+        if _collector_stack:
+            _collector_stack[-1].append(matcher)
     # 否则：matcher 直接作为装饰器返回值，由调用方自行处理
 
 
 def begin_module_collection() -> list:
-    """开始收集模块级 Matcher，返回收集列表"""
-    global _matcher_collector
+    """开始收集模块级 Matcher，返回本次收集列表（可嵌套）"""
+    collector: list = []
     with _collector_lock:
-        _matcher_collector = []
-        return _matcher_collector
+        _collector_stack.append(collector)
+    return collector
 
 
 def end_module_collection():
-    """结束收集"""
-    global _matcher_collector
+    """结束最近一次收集（仅弹出栈顶，不影响外层收集器）"""
     with _collector_lock:
-        _matcher_collector = None
+        if _collector_stack:
+            _collector_stack.pop()

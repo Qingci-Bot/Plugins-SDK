@@ -308,3 +308,33 @@ def test_notice_fields_normalized_by_target_type():
     assert isinstance(edited.message_id, str)
     assert edited.alt_message == "新文本"
     assert edited.is_at_bot is False
+
+
+def test_parse_notice_event_caches_class_hints(monkeypatch):
+    """事件解析按类缓存 get_type_hints（此前每次解析都重新解析前向引用）"""
+    from qingci_plugin_sdk import events as events_module
+
+    events_module._TYPE_HINTS.clear()
+    calls: list[type] = []
+    real = events_module.get_type_hints
+
+    def counting(cls):
+        calls.append(cls)
+        return real(cls)
+
+    monkeypatch.setattr(events_module, "get_type_hints", counting)
+    raw = {
+        "post_type": "notice",
+        "notice_type": "group_increase",
+        "group_id": 20001,
+        "user_id": 10001,
+        "operator_id": 20002,
+    }
+    try:
+        for _ in range(5):
+            evt = events_module.parse_notice_event(raw)
+        assert len(calls) == 1  # 5 次解析只解析一次注解
+        assert evt.group_id == 20001
+        assert evt.operator_id == 20002
+    finally:
+        events_module._TYPE_HINTS.clear()

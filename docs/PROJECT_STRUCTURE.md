@@ -30,17 +30,18 @@ Plugins-SDK/
 │   ├── llm_tool.py           # @llm_tool 插件级 LLM 工具声明
 │   ├── events.py             # 类型化事件模型（NoticeEvent/RequestEvent 及子类 + 解析工厂）
 │   ├── session.py            # 会话阶梯（Session + Pause/Finish/Reject 控制流异常）
-│   └── paths.py              # 路径解析：app_root 定位 + data_root 覆盖钩子（供 data_dir 重定向）
-├── plugins/                  # 插件开发/验证环境
+│   ├── paths.py              # 路径解析：app_root 定位 + data_root 覆盖钩子（供 data_dir 重定向）
+│   └── py.typed              # PEP 561 类型标记（随 wheel 分发，下游可获类型信息）
+├── plugins/                  # 插件开发/验证环境（不进入 wheel，仅本地开发用）
 │   ├── __init__.py           # 包标记
 │   └── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
-├── tests/                    # SDK 单元测试（pytest）
+├── tests/                    # SDK 单元测试（pytest，不进入 wheel）
 ├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
-├── pyproject.toml            # 包元数据（name/version）、构建配置、ruff/mypy 配置
+├── pyproject.toml            # 包元数据（版本取自 __version__）、构建配置、ruff/mypy/coverage 配置
 ├── README.md                 # 插件开发指南（面向插件作者）
 ├── CHANGELOG.md              # 变更记录
 ├── LICENSE                   # GPL-3.0
-├── uv.lock                   # uv 依赖锁
+├── uv.lock                   # uv 依赖锁（CI 以 UV_FROZEN=1 严格安装）
 └── .gitignore                # 产物忽略规则
 ```
 
