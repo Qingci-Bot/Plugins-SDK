@@ -21,6 +21,13 @@
 - `except` 块抛出异常时用 `raise ... from None`，消除异常链噪音。
 - 模块级装饰器（`on_command`、`@llm_tool`）的收集器用 `threading.Lock` 保护，避免并发加载交错污染全局状态。
 - 弃用 API（如旧式 `on_message`/`on_notice`/`on_request`）在 docstring 标注 `Deprecated` 并说明替代方式。
+- **宿主注入的依赖统一标 `Any | None`**：`bot` / `db` / `config` / `connection` / `llm` 等由宿主实现，
+  SDK 不依赖其类型，但**不能**用 `object`——`py.typed` 生效后，下游 `self.llm.chat()` 会被判
+  「object 无该属性」。SDK 自身需要具体行为时先 `bot: Any = self.bot` 再使用。
+- **动态属性容器用 `__getattr__` + `__setattr__` 声明**：如 `Session` 允许插件挂跨轮状态
+  （`ctx.session.step = ...`）。`__getattr__` 未命中时仍抛 `AttributeError`（保住 `getattr(..., default)` 语义），
+  `__setattr__` 直接转 `object.__setattr__`（运行期行为不变，仅为类型检查开洞）。
+- 可选字段用 `X | None`，并在文档/示例里给出判空写法（`ctx.session` 即属此类）。
 
 ## 3. 命名约定
 
@@ -36,6 +43,9 @@
 ## 4. 公开 API 约定
 
 - 所有希望插件使用的符号，必须在 `qingci_plugin_sdk/__init__.py` 中导出并加入 `__all__`。
+- **模块级 `__all__` 必须与包级一致**：`events.py` 等模块的 `__all__` 决定
+  `from qingci_plugin_sdk.events import *` 能取到哪些名字，漏写会导致「包级能导入、模块级星号导入拿不到」。
+  新增公开符号时两处同时补，并由 `tests/test_smoke.py` 的导出面断言兜底。
 - 工厂函数（`on_command` 等）返回装饰器，装饰器接收 handler 返回 `Matcher`——保持这一稳定的调用形态。
 - 新增能力若与主项目 `bot/plugin/protocol/` 对齐，签名与行为应保持一致；协议变更先在 SDK 发布，主项目通过 git 依赖版本锁定同步。
 - 生命周期钩子在 `PluginBase` 上提供**默认空实现**（`on_startup`/`on_shutdown`/`on_bot_connect`/`on_metaevent`），插件按需覆写，框架无需判空。
@@ -46,13 +56,16 @@
 # 在 Plugins-SDK/ 目录下运行（产物留在本目录内），与 CI 一致
 uv run ruff check .                      # 静态检查（配置见 pyproject.toml）
 uv run ruff format --check .             # 格式检查
-uv run mypy qingci_plugin_sdk            # 类型检查（配置见 pyproject.toml）
+uv run mypy qingci_plugin_sdk plugins/_template   # 类型检查（含插件模板，与 CI 一致）
 uv run pytest --cov --cov-fail-under=90  # SDK 自测 + 分支覆盖率门槛（tests/ 目录）
 uv build                                 # 构建校验（wheel 内容守卫见 CI build job）
 ```
 
 - CI 在 Python 3.10 / 3.11 / 3.12 / 3.13 上运行测试（`requires-python >= 3.10` 的完整声明区间）。
 - 新增公开符号必须同时补 `__all__` 与 `tests/test_smoke.py` 的导出面断言。
+- **README 的 python 代码块也会被 `ruff format` 处理**（ruff 0.17+ 支持 Markdown 代码块），
+  因此示例必须写成合法 Python；`tests/test_docs.py` 会校验代码块语法、导入符号是否存在，
+  以及每个包级导出是否至少在 README 中出现一次。
 - 提交信息使用 [Conventional Commits](https://www.conventionalcommits.org/)：`feat:` / `fix:` / `docs:` / `refactor:` / `chore:`。
 - 大改动同步更新 `CHANGELOG.md`（`[Unreleased]` 段）与 `README.md`。
 - 不提交产物与缓存（见 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) 产物归属约定）。

@@ -43,9 +43,11 @@
   - [国际化 i18n](#国际化-i18n140)
   - [LLM 工具声明](#llm-工具声明140)
   - [插件数据目录](#插件数据目录140)
+  - [适配器与底层辅助](#适配器与底层辅助)
 - [命令管理](#命令管理)
 - [常见场景](#常见场景)
   - [发送消息](#发送消息)
+  - [发送富文本消息（消息段）](#发送富文本消息消息段)
   - [调用大模型](#调用大模型)
   - [定时任务](#定时任务)
   - [Function Calling](#function-calling)
@@ -686,11 +688,14 @@ async def on_edited(ctx: MatcherContext, event: MessageEditedEvent) -> str | Non
 用 `ctx.session` 实现声明式的多轮对话：handler 不再"一次事件一次回复"，而是可以挂起等待用户下一条消息，逐轮收集信息后结束。适合问卷、配置向导、游戏对局等场景。
 
 ```python
-from qingci_plugin_sdk import PauseException, RejectException
+from qingci_plugin_sdk import FinishException, PauseException, RejectException
 
 
 @on_command("wizard")
 async def wizard(ctx: MatcherContext):
+    # ctx.session 为 Session | None：仅宿主调度注入时非空，判空后 mypy 才放行
+    if ctx.session is None:
+        return
     step = getattr(ctx.session, "step", "ask_name")
     if step == "ask_name":
         ctx.session.step = "ask_age"  # 跨轮状态
@@ -715,7 +720,7 @@ async def wizard(ctx: MatcherContext):
 | `await ctx.session.reject(text)` | 发送文本，拒绝当前输入并继续等待（可做输入校验） |
 
 **特性：**
-- Session 实例在阶梯期间跨轮复用：`ctx.session.任意属性 = 值` 可在多轮之间保留
+- Session 实例在阶梯期间跨轮复用：`ctx.session.任意属性 = 值` 可在多轮之间保留（`Session` 的 `__getattr__`/`__setattr__` 让这类动态属性在 `py.typed` 下按 `Any` 处理，不会报类型错误）
 - 阶梯默认 300 秒超时，超时后下一条消息不再续接；插件卸载/禁用时自动清理
 - 提示文本走主动发送通道；handler 正常 `return` 的文本走回复通道
 - 阶梯按会话隔离（私聊按用户、群聊按 `群号+用户`），不同用户互不干扰
@@ -1006,6 +1011,10 @@ from qingci_plugin_sdk import (
 )
 ```
 
+> 上面是**常用符号**清单。完整导出见 `qingci_plugin_sdk.__all__`（当前 82 项）；
+> 类型化事件见「类型化事件」章节，消息段工具（`Message` / `MessageSegment` / `parse_cq_string`）
+> 见「发送富文本消息（消息段）」。
+
 #### 指令系统增强（1.4.0）
 
 `on_command` 现支持别名、子指令与类型化参数：
@@ -1099,6 +1108,23 @@ async def get_time() -> str:
 > `instances/<name>/data/plugins/<name>/`。`paths.data_root()` 可查询当前数据根；
 > 独立开发时未调用 `set_data_root()`，行为保持 `app_root()/data` 不变。
 
+#### 适配器与底层辅助
+
+主项目内部与自定义适配器会用到的底层工具，插件一般不必直接调用，列出以便排查与扩展：
+
+| 符号 | 用途 |
+|------|------|
+| `parse_v12_event(event)` | 按 `type`/`detail_type` 分派到具体事件模型（`parse_notice_event` / `parse_request_event` 的上层入口） |
+| `translate_v11_event(event)` | v11 事件 → v12 结构（主项目 `v11_compat` 翻译层即基于此） |
+| `detail_type_to_notice_type(detail)` / `notice_type_to_detail_type(t)` | `detail_type` 与 v11 `notice_type` 双向映射 |
+| `SegmentType` | 段类型常量（`text` / `image` / `mention` / `reply` …），避免手写字符串 |
+| `normalize_v11_segment(seg)` | 单个 v11 段 → v12 段 |
+| `to_v11_segment(seg)` | 单个 v12 段 → v11 段 |
+| `segments_to_v11(list)` / `segments_to_v12(list)` | 整条消息在 v11 / v12 段数组之间转换 |
+| `begin_module_collection()` / `end_module_collection()` | 模块级装饰器收集器（加载器使用；嵌套安全，内部为栈） |
+| `begin_tool_collection()` / `end_tool_collection()` | `@llm_tool` 收集器（同上） |
+| `FinishException` / `PauseException` / `RejectException` | 会话阶梯控制流异常（`session.finish/pause/reject` 内部抛出，由框架捕获） |
+
 ### 所有内置规则速查
 
 | 函数 | 签名 | 匹配条件 |
@@ -1179,6 +1205,60 @@ async def on_load(self):
 ```
 
 > **注意**：`self.connection` 只有在 Bot 连接了对应平台适配器（如 QQ 的 LLBot / Telegram Bot）后才能发送消息。在 handler 里直接 `return "..."` 更简单，推荐优先使用。
+
+### 发送富文本消息（消息段）
+
+纯文本直接 `return "..."` 即可；需要图片、@、引用回复、语音时，返回 **OneBot 12 消息段数组**（`list[dict]`）。SDK 提供 `MessageSegment` 工厂，不必手写 dict 结构：
+
+```python
+from qingci_plugin_sdk import MatcherContext, MessageSegment, on_command
+
+
+@on_command("pic")
+async def pic(ctx: MatcherContext) -> list[dict]:
+    return [
+        MessageSegment.reply(ctx.message_id),  # 引用回复（可选）
+        MessageSegment.mention(ctx.user_id),  # @提问者
+        MessageSegment.text(" 你要的图："),
+        MessageSegment.image("https://example.com/a.jpg"),
+    ]
+```
+
+| 工厂 | 段类型 | 说明 |
+|------|--------|------|
+| `MessageSegment.text(text)` | `text` | 纯文本 |
+| `MessageSegment.mention(user_id)` | `mention` | @某人 |
+| `MessageSegment.mention_all()` | `mention` | @全体成员 |
+| `MessageSegment.image(file_id)` | `image` | 图片（URL 或已上传的 file_id） |
+| `MessageSegment.voice(file_id)` | `voice` | 语音 |
+| `MessageSegment.audio(file_id)` | `audio` | 音频 |
+| `MessageSegment.video(file_id)` | `video` | 视频 |
+| `MessageSegment.file(file_id)` | `file` | 文件 |
+| `MessageSegment.reply(message_id, user_id="")` | `reply` | 引用回复 |
+| `MessageSegment.location(...)` | `location` | 位置 |
+
+**读取收到的消息**：`ctx` 上已备好常用派生字段，多数场景不必自己解析段数组——
+
+| 字段 | 内容 |
+|------|------|
+| `ctx.plain_text` | 纯文本（不含图片 / @） |
+| `ctx.segments` | 完整 v12 段数组 |
+| `ctx.images` | 图片 file_id 列表 |
+| `ctx.at_list` | 被 @ 的 user_id 列表（字符串） |
+
+需要更细的提取时用 `Message` 包装：
+
+```python
+from qingci_plugin_sdk import Message
+
+msg = Message.from_raw(ctx.segments)
+msg.extract_plain_text()  # 纯文本
+msg.images()  # 图片 file_id 列表
+msg.mentions()  # 被 @ 的 user_id 列表
+msg.first_reply()  # 首个引用段（无则 None）
+```
+
+**v11 兼容**：v11 段在入口已归一化为 v12 段，插件无需区分。历史代码里的 CQ 码字符串可用 `parse_cq_string("你好[CQ:image,file=a.jpg]")` 解析；`Message.from_v11()` / `as_v11()` 可在 v11 段数组与 v12 之间转换。
 
 ### 调用大模型
 
@@ -1330,6 +1410,13 @@ A: 检查你的类名是否和目录名一致（不是必须，但建议），�
 ### Q: `self.scheduler` 或 `self.tool_registry` 是 None？
 
 A: 这些是可选依赖，取决于主项目的配置。使用前务必判空：`if self.scheduler is not None:`。
+
+### Q: 有类型提示吗？编辑器提示 `ctx.session` 可能为 None？
+
+A: 有。SDK 自带 `py.typed`（PEP 561），安装后 mypy / Pylance / PyCharm 可直接获得类型信息。
+`ctx.session` 的类型是 `Session | None`——只有宿主调度注入时才非空，所以使用前判空即可
+（模板与本文档示例都这么写）。`Session` 上的自定义跨轮属性（`ctx.session.step = ...`）
+按 `Any` 处理，不会报类型错误。
 
 ### Q: 如何调试插件？
 
