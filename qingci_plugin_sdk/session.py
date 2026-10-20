@@ -26,7 +26,7 @@
 """
 
 from collections.abc import Awaitable, Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     pass
@@ -116,3 +116,22 @@ class Session:
         if text and self._send_fn is not None:
             await self._send_fn(text)
         raise RejectException(text)
+
+    # ---- 跨轮动态状态 ----
+
+    def __getattr__(self, name: str) -> Any:
+        """动态属性读取：插件可在会话对象上挂任意跨轮状态（如 ctx.session.step）
+
+        只在常规属性查找失败时被调用，因此真实方法/字段的类型不受影响；
+        未设置的属性照常抛 AttributeError（``getattr(s, "step", default)`` 语义不变）。
+        返回 Any 是让 py.typed 下 ``ctx.session.step`` 这类读取能通过类型检查。
+        """
+        raise AttributeError(name)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """动态属性写入：运行期语义与普通对象完全一致
+
+        声明此钩子仅为了让 mypy 允许 ``ctx.session.step = "ask_age"`` 这类
+        跨轮状态赋值——否则 py.typed 下所有动态属性写入都会报 attr-defined。
+        """
+        object.__setattr__(self, name, value)

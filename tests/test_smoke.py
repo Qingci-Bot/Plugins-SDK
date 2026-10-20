@@ -583,3 +583,15 @@ def test_py_typed_marker_present():
     from pathlib import Path
 
     assert (Path(sdk.__file__).parent / "py.typed").is_file()
+
+
+def test_message_edited_notice_exported_from_events_module():
+    """MessageEditedEvent 必须同时出现在模块级与包级 __all__
+
+    此前只在包级 __all__ 里，`from qingci_plugin_sdk.events import *` 取不到，
+    与包级导出不一致（下游镜像模块级 __all__ 时会漏掉该类）。
+    """
+    from qingci_plugin_sdk import events as events_module
+
+    assert "MessageEditedEvent" in events_module.__all__
+    assert "MessageEditedEvent" in sdk.__all__

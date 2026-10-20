@@ -37,6 +37,11 @@ jobs:
       - name: Type check (mypy)
         run: uv run --no-sync mypy qingci_plugin_sdk
 
+      - name: Type check plugin template (mypy)
+        # 模板是「用户第一份代码」，py.typed 生效后它必须自己过类型检查：
+        # 此前 ctx.bot/ctx.session 的标注问题只在下游暴露，SDK 侧无人发现
+        run: uv run --no-sync mypy plugins/_template
+
   test:
     name: Test (py${{ matrix.python-version }})
     runs-on: ubuntu-latest

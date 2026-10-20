@@ -109,3 +109,22 @@ def test_step_metadata():
     session = Session(step_key="onebot:private:1", step_ttl=60.0)
     assert session.step_key == "onebot:private:1"
     assert session.step_ttl == 60.0
+
+
+def test_dynamic_attributes_round_trip():
+    """跨轮状态：插件可在 Session 上挂任意属性（py.typed 下也须可通过类型检查）"""
+    session = Session()
+    session.step = "ask_age"
+    session.name = "小明"
+
+    assert session.step == "ask_age"
+    assert session.name == "小明"
+
+
+def test_unset_dynamic_attribute_raises_attribute_error():
+    """未设置的动态属性照常抛 AttributeError（getattr 默认值语义不变）"""
+    session = Session()
+
+    with pytest.raises(AttributeError):
+        _ = session.not_set
+    assert getattr(session, "not_set", "fallback") == "fallback"

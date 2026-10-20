@@ -30,7 +30,7 @@ logger = logging.getLogger("qingci-bot.matcher")
 class MatcherContext(MessageContext):
     """匹配器上下文 — 增强版 MessageContext"""
 
-    bot: object | None = None  # Bot 实例引用（运行时注入）
+    bot: Any | None = None  # Bot 实例引用（运行时注入；宿主类型，SDK 不依赖）
     plugin: PluginBase | None = None
     matcher: Matcher | None = None
     command: str = ""
@@ -52,7 +52,7 @@ class MatcherContext(MessageContext):
     def from_message_context(
         cls,
         ctx: MessageContext,
-        bot: object | None = None,
+        bot: Any | None = None,
         plugin: PluginBase | None = None,
         matcher: Matcher | None = None,
     ) -> MatcherContext:

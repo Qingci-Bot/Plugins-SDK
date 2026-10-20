@@ -60,11 +60,14 @@ class PluginBase(ABC):
     _status: PluginStatus = PluginStatus.LOADING
 
     # 依赖引用（由框架注入）
-    bot: object | None = None
-    db: object | None = None
-    config: object | None = None
-    connection: object | None = None
-    llm: object | None = None
+    # 标注为 Any | None：这些对象由宿主实现，SDK 不依赖其类型（避免反向依赖），
+    # 但用 object 会让下游插件的 self.bot.xxx / self.llm.chat() 在 mypy 下
+    # 全部报「object 无该属性」。与下方 scheduler / tool_registry 等保持一致。
+    bot: Any | None = None
+    db: Any | None = None
+    config: Any | None = None
+    connection: Any | None = None
+    llm: Any | None = None
     scheduler: Any | None = None
     tool_registry: Any | None = None
     knowledge_store: Any | None = None

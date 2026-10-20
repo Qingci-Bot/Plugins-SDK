@@ -4,6 +4,19 @@
 
 SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
 
+## [1.13.9] - 2026-10-20（下游类型体验修复）
+
+### Fixed
+
+- **注入项类型标注统一为 `Any | None`**：`PluginBase.bot` / `db` / `config` / `connection` / `llm` 与 `MatcherContext.bot` 此前标为 `object | None`，而同类的 `scheduler` / `tool_registry` 等却是 `Any | None`。自 1.13.8 补了 `py.typed` 后，下游插件里 `self.llm.chat()`、`ctx.bot.get_status()` 全部被判「object 无该属性」（主项目一次报出 27 处）。SDK 自身靠 `bot: Any = self.bot` 内部转换绕过，CI 只检查本包故未暴露
+- **`Session` 支持跨轮动态属性**：新增 `__getattr__` / `__setattr__`，插件可写 `ctx.session.step = "ask_age"` 这类跨轮状态而不再被 mypy 判 `attr-defined`；未设置的属性仍抛 `AttributeError`（`getattr(..., default)` 语义不变），真实方法/字段类型不受影响
+- **`MessageEditedEvent` 补入 `events.__all__`**：此前只在包级 `__all__` 里，`from qingci_plugin_sdk.events import *` 取不到，与包级导出不一致；下游镜像模块级 `__all__` 时会漏掉该类
+- **插件模板 `_on_group_notice` 返回值标注**：标注 `-> str` 却在「不处理的事件」分支返回 `None`，改为 `str | None`（与 handler 契约一致）
+
+### Changed
+
+- **CI 增加模板类型检查**：`mypy plugins/_template`。模板是用户复制的第一份代码，此前只检查 SDK 包本身，导致模板在 `py.typed` 下过不了类型检查却无人发现
+
 ## [1.13.8] - 2026-10-20（P0 缺陷修复 + P1 性能 + P2 打包与 CI）
 
 ### Added

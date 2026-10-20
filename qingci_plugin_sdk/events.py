@@ -55,6 +55,7 @@ __all__ = [
     "GroupCardNotice",
     "GroupEssenceNotice",
     "GroupSignInNotice",
+    "MessageEditedEvent",
     "RequestEvent",
     "FriendRequestEvent",
     "GroupRequestEvent",
