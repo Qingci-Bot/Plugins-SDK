@@ -48,6 +48,7 @@
 - [常见场景](#常见场景)
   - [发送消息](#发送消息)
   - [发送富文本消息（消息段）](#发送富文本消息消息段)
+  - [把收到的图片交给大模型（多模态）](#把收到的图片交给大模型多模态)
   - [调用大模型](#调用大模型)
   - [定时任务](#定时任务)
   - [Function Calling](#function-calling)
@@ -1259,6 +1260,42 @@ msg.first_reply()  # 首个引用段（无则 None）
 ```
 
 **v11 兼容**：v11 段在入口已归一化为 v12 段，插件无需区分。历史代码里的 CQ 码字符串可用 `parse_cq_string("你好[CQ:image,file=a.jpg]")` 解析；`Message.from_v11()` / `as_v11()` 可在 v11 段数组与 v12 之间转换。
+
+### 把收到的图片交给大模型（多模态）
+
+`ctx.images` 里存的是平台下发的图片引用——OneBot 12 的 `file_id`、Telegram 的
+`file_id`，都是**不透明 ID**，大模型读不到。要喂给视觉模型，先用
+`resolve_images()` 换成 `http(s)` URL 或 `data:` URI：
+
+```python
+from qingci_plugin_sdk import MatcherContext, on_command, resolve_images
+
+
+@on_command("看图")
+async def describe(ctx: MatcherContext) -> str:
+    if not ctx.images:
+        return "请附图后再试"
+    images = await resolve_images(self.connection, ctx.images)
+    if not images:
+        return "图片解析失败"
+    return await self.llm.chat(message=ctx.plain_text, images=images)
+```
+
+**它做了什么：**
+
+| 输入 | 处理 |
+|------|------|
+| `https://...` / `data:...` | 原样返回 |
+| `base64://...` | 解码后按魔数判 MIME，转成 `data:` URI |
+| 本地文件路径 | 读取并转 `data:` URI（超过 `max_bytes` 跳过） |
+| 不透明 `file_id` | 依次尝试平台 API `get_image`（v11）/ `get_file`（v12），取 `url` / `base64` / `file` |
+
+**注意：**
+
+- 模块**零依赖**（只用标准库），所以**只解析不下载**——远端 URL 直接交给模型侧拉取
+- 默认单图上限 `DEFAULT_MAX_BYTES`（4 MiB），批量默认最多 4 张，都可用参数调整
+- 解析失败的项会被跳过而不是抛异常；全部失败时返回空列表，调用方回退成纯文本即可
+- 具体能否识别取决于**模型是否支持视觉输入**，与 SDK 无关
 
 ### 调用大模型
 

@@ -10,6 +10,12 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §5：打 `vX.Y.Z` tag 即自动
 校验、测试、构建、上传索引并创建 GitHub Release。
 
+## [Unreleased]
+
+### Added
+
+- **`resolve_image` / `resolve_images`（新增 `media` 模块）**：把平台图片引用换成模型可读取的 `http(s)` URL 或 `data:` URI。此前 `ctx.images` 里是不透明 `file_id`（OneBot 12 / Telegram 都是），直接传给 LLM 无效。支持 URL / `data:` 直通、`base64://` 解码、本地文件编码，以及经平台 API（`get_image` / `get_file`）换取 `url` / `base64` / 文件路径。零运行时依赖，只解析不下载；单图默认上限 4 MiB，批量默认最多 4 张
+
 ## [1.14.0] - 2026-10-23（弃用告警与工程化收口）
 
 ### Added

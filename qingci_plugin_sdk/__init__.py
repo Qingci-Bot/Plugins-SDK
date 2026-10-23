@@ -54,6 +54,7 @@ from .matcher import (
     on_request,
     on_startswith,
 )
+from .media import DEFAULT_MAX_BYTES, resolve_image, resolve_images
 from .permission import (
     ADMIN,
     EVERYONE,
@@ -188,4 +189,8 @@ __all__ = [
     "PauseException",
     "FinishException",
     "RejectException",
+    # 媒体解析
+    "resolve_image",
+    "resolve_images",
+    "DEFAULT_MAX_BYTES",
 ]
