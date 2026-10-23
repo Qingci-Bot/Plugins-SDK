@@ -16,7 +16,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  UV_FROZEN: "1"
+  # 不设 UV_FROZEN：发版作业用 --locked 显式校验锁文件与 pyproject 一致
+  # （UV_FROZEN 与 --locked 互斥，同时出现会直接报参数冲突）
   # 上传走后台域名（与安装用的索引域名分开）：
   # 索引 https://pypi.luoqingciya.cn/simple ，上传 https://admin.pypi.luoqingciya.cn/legacy/
   PYPI_PUBLISH_URL: https://admin.pypi.luoqingciya.cn/legacy/
