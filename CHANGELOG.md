@@ -14,10 +14,13 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 
 ### Added
 
+- **测试补齐**：新增 `tests/test_base.py`（get_exports 失败分支、弃用钩子告警、register_page 探测）与 `tests/test_llm_tool.py`（类方法拒绝、收集器为栈）；`test_ratelimit` / `test_segments` / `test_rule` / `test_permission` 补边界与异常路径。覆盖率 92% → **96.5%**，测试数 219 → 257
 - **文档一致性测试 `tests/test_docs.py`（36 例）**：校验 README 全部 python 代码块的语法、`from qingci_plugin_sdk import X` 的符号是否存在，以及每个包级导出是否至少在 README 中出现一次
 
 ### Changed
 
+- **Python 3.14 纳入支持范围**：CI 测试矩阵与 `classifiers` 均补 3.14（此前只测到 3.13，而 `requires-python >= 3.10` 实际允许 3.14 运行，属未声明未验证）
+- **弃用钩子覆写时记录 WARNING**：`on_message` / `on_notice` / `on_request` 此前只有 docstring 标注，插件作者运行时收不到任何信号。现于 `__init_subclass__` 检测覆写并记录 WARNING，明确「计划在 2.0 移除」；`plugins/_template` 同步移除示例覆写（模板是用户复制的第一份代码，不应示范弃用写法）
 - **README 补「发送富文本消息（消息段）」章节**：`segments` 模块（`Message` / `MessageSegment` / `parse_cq_string` / v11↔v12 转换）此前是包级导出却无任何文档入口
 - **README 补「适配器与底层辅助」小节**：覆盖此前从未提及的 13 个导出符号
 - **README 会话阶梯示例补 `ctx.session` 判空**：该字段为 `Session | None`，原示例复制到类型检查环境即报错

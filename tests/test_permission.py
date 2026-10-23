@@ -153,3 +153,47 @@ class SimpleNamespaceBot:
         cfg = self._Cfg()
         cfg.bot = b
         self.config = cfg
+
+
+# ---------- 组合的异常路径 ----------
+
+
+def test_or_returns_false_when_left_raises():
+    """左侧 checker 抛异常时按不通过处理，继续判右侧"""
+
+    async def boom(bot, event, ctx):
+        raise RuntimeError("boom")
+
+    async def ok(bot, event, ctx):
+        return True
+
+    assert run(Permission(boom) | Permission(ok), make_ctx()) is True
+
+
+def test_or_returns_false_when_right_raises():
+    async def deny(bot, event, ctx):
+        return False
+
+    async def boom(bot, event, ctx):
+        raise RuntimeError("boom")
+
+    assert run(Permission(deny) | Permission(boom), make_ctx()) is False
+
+
+def test_invert_returns_false_when_checker_passes():
+    async def ok(bot, event, ctx):
+        return True
+
+    assert run(~Permission(ok), make_ctx()) is False
+
+
+def test_admin_denied_without_bot_config():
+    """bot.config 为 None 时 ADMIN 走显式拒绝分支（而非靠异常兜底）"""
+    bot = type("Bot", (), {"config": None})()
+    assert run(ADMIN, make_ctx(), bot=bot) is False
+
+
+def test_user_permission_accepts_single_id():
+    """USER 接受单个 int / str（内部统一转字符串）"""
+    assert run(USER(12345), make_ctx(user_id="12345")) is True
+    assert run(USER(12345), make_ctx(user_id="999")) is False

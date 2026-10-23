@@ -111,3 +111,32 @@ def test_rejected_check_does_not_evict_others():
     ok, _ = limiter.check("a")  # 超当日上限，被拒
     assert ok is False
     assert set(limiter._data) == {"a", "b"}
+
+
+def test_evict_oldest_on_empty_table_is_noop():
+    """空表淘汰不应抛异常（宿主可能在容量边界反复触发）"""
+    limiter = RateLimiter(daily_limit=1, cooldown_seconds=0, max_entries=1)
+    limiter._evict_oldest()
+    assert limiter._data == {}
+
+
+def test_cleanup_removes_only_inactive_entries():
+    import time as _time
+
+    limiter = RateLimiter(daily_limit=10, cooldown_seconds=0)
+    limiter.check("stale")
+    limiter.check("fresh")
+
+    # 把 stale 的最后活跃时间改到 8 天前
+    today, count, _ = limiter._data["stale"]
+    limiter._data["stale"] = (today, count, _time.time() - 8 * 86400)
+
+    assert limiter.cleanup(inactive_days=7) == 1
+    assert "stale" not in limiter._data
+    assert "fresh" in limiter._data
+
+
+def test_cleanup_without_stale_entries_returns_zero():
+    limiter = RateLimiter(daily_limit=10, cooldown_seconds=0)
+    limiter.check("u1")
+    assert limiter.cleanup(inactive_days=7) == 0

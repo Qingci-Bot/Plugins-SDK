@@ -7,6 +7,7 @@ import asyncio
 import pytest
 
 from qingci_plugin_sdk.context import MessageContext
+from qingci_plugin_sdk.matcher import MatcherContext
 from qingci_plugin_sdk.ratelimit import RateLimiter
 from qingci_plugin_sdk.rule import (
     Rule,
@@ -36,6 +37,19 @@ def make_ctx(text: str = "", **kw) -> MessageContext:
     }
     base.update(kw)
     return MessageContext(**base)
+
+
+def make_matcher_ctx(text: str = "", **kw) -> MatcherContext:
+    """构造 MatcherContext（command / args 等字段只在它上面）"""
+    base: dict = {
+        "plain_text": text,
+        "message_type": "private",
+        "user_id": "1",
+        "group_id": "",
+        "is_at_bot": False,
+    }
+    base.update(kw)
+    return MatcherContext(**base)
 
 
 def run(rule: Rule, ctx: MessageContext, bot=None) -> bool:
@@ -324,3 +338,111 @@ def test_rate_limit_passes_without_limiter():
     bot = _FakeBot()
     bot.rate_limiter = None
     assert run(rate_limit(), make_ctx("x"), bot) is True
+
+
+# ============ 组合与边界 ============
+
+
+def test_regex_nonmatching_returns_false():
+    assert run(regex(r"^!ping$"), make_ctx("!pong")) is False
+
+
+def test_subcommand_exact_match_clears_args():
+    """args 恰好等于子指令时清空 args（`/admin ban` 而非 `/admin ban 123`）"""
+    ctx = make_matcher_ctx(command="admin", args="ban")
+    assert run(subcommand("admin", "ban"), ctx) is True
+    assert ctx.subcommand == "ban"
+    assert ctx.command == "admin ban"
+    assert ctx.args == ""
+
+
+def test_subcommand_nonmatching_returns_false():
+    ctx = make_matcher_ctx(command="admin", args="kick 1")
+    assert run(subcommand("admin", "ban"), ctx) is False
+    assert ctx.subcommand == ""
+
+
+def test_and_runs_all_checkers_and_fails_fast():
+    """& 是顺序与：左侧失败即短路，不再执行右侧"""
+    called = []
+
+    def left(bot, event, ctx):
+        return False
+
+    def right(bot, event, ctx):
+        called.append(True)
+        return True
+
+    assert run(Rule(left) & Rule(right), make_ctx()) is False
+    assert called == []
+
+
+def test_and_returns_false_when_checker_raises():
+    """checker 抛异常按拒绝处理（安全默认：异常时不放行）"""
+
+    def boom(bot, event, ctx):
+        raise RuntimeError("boom")
+
+    assert run(Rule(boom) & Rule(lambda b, e, c: True), make_ctx()) is False
+
+
+def test_or_restores_ctx_when_left_fails():
+    """| 左侧失败时还原它写进 ctx 的字段，右侧看到的是干净上下文"""
+
+    def left(bot, event, ctx):
+        ctx.args = "polluted"
+        return False
+
+    seen = {}
+
+    def right(bot, event, ctx):
+        seen["args"] = getattr(ctx, "args", "")
+        return True
+
+    assert run(Rule(left) | Rule(right), make_ctx()) is True
+    assert seen["args"] == ""
+
+
+def test_or_returns_false_when_both_raise():
+    def boom(bot, event, ctx):
+        raise RuntimeError("boom")
+
+    assert run(Rule(boom) | Rule(boom), make_ctx()) is False
+
+
+def test_invert_awaits_async_checker():
+    async def async_check(bot, event, ctx):
+        return False
+
+    assert run(~Rule(async_check), make_ctx()) is True
+
+
+async def test_rate_limit_swallows_notice_failure(caplog):
+    """限流提示发送失败只记日志，仍返回 False（不因发送异常放行）"""
+
+    class _BrokenConnection:
+        is_connected = True
+
+        async def send_msg(self, *args, **kwargs):
+            raise RuntimeError("send failed")
+
+    class _RateCfg:
+        enabled = True
+
+    class _BotConfig:
+        rate_limit = _RateCfg()
+        bot = type("B", (), {"admin_set": set()})()
+
+    class _Bot:
+        config = _BotConfig()
+        rate_limiter = RateLimiter(daily_limit=1, cooldown_seconds=0)
+        connection = _BrokenConnection()
+
+    rule = rate_limit()
+    ctx = make_ctx("hi")
+    bot = _Bot()
+
+    assert await rule.check(bot, {}, ctx) is True
+    with caplog.at_level("WARNING", logger="qingci-bot.sdk"):
+        assert await rule.check(bot, {}, ctx) is False
+    assert any("发送限流提示失败" in r.message for r in caplog.records)

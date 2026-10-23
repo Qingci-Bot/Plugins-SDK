@@ -420,7 +420,7 @@ plugin.enabled  # bool，向后兼容：LOADING/LOADED 为 True
 | `ERROR` | `"error"` | 加载/运行出错 |
 | `UNLOADING` | `"unloading"` | 正在卸载 |
 
-> **旧式回调已弃用**：`on_message(ctx)` / `on_notice(event)` / `on_request(event)` 这三个重写式回调标记为 deprecated，仅向后兼容旧插件。新插件请使用 Matcher（`on_message(rule=...)` / `on_command(...)` / `on_notice(...)` / `on_request(...)` 装饰器），见下一节「匹配器 Matcher」。
+> **旧式回调已弃用**：`on_message(ctx)` / `on_notice(event)` / `on_request(event)` 这三个重写式回调标记为 deprecated，仅向后兼容旧插件。**覆写它们时 SDK 会在插件加载阶段记录一条 WARNING**（日志中可见），并计划在下一个主版本（2.0）移除。新插件请使用 Matcher（`on_message(rule=...)` / `on_command(...)` / `on_notice(...)` / `on_request(...)` 装饰器），见下一节「匹配器 Matcher」。
 
 ### 匹配器 Matcher
 

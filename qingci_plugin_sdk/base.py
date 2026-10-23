@@ -12,6 +12,15 @@ if TYPE_CHECKING:
     from .matcher import Matcher
 
 
+# 已弃用的旧式事件钩子 → 推荐替代方式。
+# 键必须与 PluginBase 上的方法名一致；覆写时在类创建阶段告警（见 __init_subclass__）。
+_DEPRECATED_HOOKS: dict[str, str] = {
+    "on_message": "Matcher 工厂 on_message()/on_command() 等",
+    "on_notice": "Matcher 工厂 on_notice()（matcher.py）",
+    "on_request": "Matcher 工厂 on_request()（matcher.py）",
+}
+
+
 class PluginStatus(str, enum.Enum):
     """插件状态枚举"""
 
@@ -101,15 +110,31 @@ class PluginBase(ABC):
     _data_dir_cache: tuple[tuple[str, str], Path] | None = None
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
-        """为每个插件类隔离 require 列表
+        """为每个插件类隔离 require 列表，并对弃用钩子的覆写发出告警
 
         `require` 默认值是类级可变对象（list）。若子类未重新声明，多个插件
         会共享同一个列表，任一插件执行 `self.require.append(...)` 都会污染
         同进程其他插件。此处为未显式声明 require 的子类复制一份独立列表。
+
+        弃用钩子（`on_message` / `on_notice` / `on_request`）仍保留默认空实现
+        以兼容旧插件，但子类覆写时会在加载阶段记录 WARNING——否则插件作者
+        得不到任何运行时信号，弃用状态会无限期延续下去。
         """
         super().__init_subclass__(**kwargs)
         if "require" not in cls.__dict__:
             cls.require = list(getattr(cls, "require", ()))
+
+        for hook, replacement in _DEPRECATED_HOOKS.items():
+            if hook in cls.__dict__:
+                import logging
+
+                logging.getLogger("qingci-bot.sdk").warning(
+                    "插件 %s 覆写了已弃用的钩子 %s()，请改用 %s；"
+                    "该钩子计划在下一个主版本（2.0）移除",
+                    cls.__name__,
+                    hook,
+                    replacement,
+                )
 
     def __init__(self):
         self._exports = {}

@@ -391,3 +391,82 @@ def test_notice_type_mapping_helpers():
     assert detail_type_to_notice_type("group_member_increase") == "group_increase"
     assert notice_type_to_detail_type("group_increase") == "group_member_increase"
     assert detail_type_to_notice_type("unknown_x") == "unknown_x"
+
+
+# ---------- parse_cq_string 各段类型 ----------
+
+
+def test_parse_cq_string_covers_each_segment_type():
+    """v11 CQ 码 → v12 段的逐类型映射（此前只测了 image）"""
+    from qingci_plugin_sdk.segments import parse_cq_string
+
+    assert parse_cq_string("[CQ:at,qq=123]") == [{"type": "mention", "data": {"user_id": "123"}}]
+    assert parse_cq_string("[CQ:at,qq=all]") == [{"type": "mention_all", "data": {}}]
+    assert parse_cq_string("[CQ:reply,id=9]") == [{"type": "reply", "data": {"message_id": "9"}}]
+    assert parse_cq_string("[CQ:record,file=a.amr]") == [
+        {"type": "voice", "data": {"file_id": "a.amr"}}
+    ]
+    assert parse_cq_string("[CQ:video,file=v.mp4]") == [
+        {"type": "video", "data": {"file_id": "v.mp4"}}
+    ]
+    # face 为 v11 专属，保留类型名透传
+    assert parse_cq_string("[CQ:face,id=14]") == [{"type": "face", "data": {"file_id": "14"}}]
+    assert parse_cq_string("[CQ:text,text=hi]") == [{"type": "text", "data": {"text": "hi"}}]
+
+
+def test_parse_cq_string_without_params():
+    """无参数的 CQ 码（raw_kvs 为空）不应抛异常"""
+    from qingci_plugin_sdk.segments import parse_cq_string
+
+    # face 走 media 分支，缺省 file/id 时 file_id 为空串
+    assert parse_cq_string("[CQ:face]") == [{"type": "face", "data": {"file_id": ""}}]
+
+
+def test_parse_cq_string_text_around_codes():
+    """段前无文本（CQ 码在开头）与段后尾随文本都要保留"""
+    from qingci_plugin_sdk.segments import parse_cq_string
+
+    parsed = parse_cq_string("[CQ:at,qq=1]你好")
+    assert parsed[0]["type"] == "mention"
+    assert parsed[-1] == {"type": "text", "data": {"text": "你好"}}
+
+    parsed = parse_cq_string("hi[CQ:at,qq=1]")
+    assert parsed[0] == {"type": "text", "data": {"text": "hi"}}
+
+
+# ---------- Message 容器行为 ----------
+
+
+def test_message_container_protocol():
+    """bool / len / iter / str / append / extend 的链式行为"""
+    from qingci_plugin_sdk.segments import Message, MessageSegment
+
+    empty = Message()
+    assert not empty and len(empty) == 0
+
+    msg = Message([MessageSegment.text("hi")])
+    assert msg and len(msg) == 1
+    assert [s["type"] for s in msg] == ["text"]
+    assert str(msg) == "hi"
+
+    # append / extend 返回自身，支持链式调用
+    msg.append(MessageSegment.mention(7)).extend([MessageSegment.text("!")])
+    assert len(msg) == 3
+    assert msg.as_v11()[0]["type"] == "text"
+
+
+def test_message_from_raw_passthrough_and_invalid():
+    """已是 Message 时直接复用；无法识别的输入退化为空消息"""
+    from qingci_plugin_sdk.segments import Message, MessageSegment
+
+    origin = Message([MessageSegment.text("x")])
+    assert Message.from_raw(origin).as_dicts() == origin.as_dicts()
+    assert Message.from_raw(12345).as_dicts() == []
+
+
+def test_looks_v11_distinguishes_reply_by_field():
+    """v11 reply 用 id，v12 reply 用 message_id"""
+    from qingci_plugin_sdk.segments import Message
+
+    assert Message._looks_v11({"type": "reply", "data": {"id": "5"}}) is True
+    assert Message._looks_v11({"type": "reply", "data": {"message_id": "5"}}) is False
