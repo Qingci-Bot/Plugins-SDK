@@ -17,7 +17,9 @@ concurrency:
 
 env:
   UV_FROZEN: "1"
-  PYPI_PUBLISH_URL: https://pypi.luoqingciya.cn/legacy/
+  # 上传走后台域名（与安装用的索引域名分开）：
+  # 索引 https://pypi.luoqingciya.cn/simple ，上传 https://admin.pypi.luoqingciya.cn/legacy/
+  PYPI_PUBLISH_URL: https://admin.pypi.luoqingciya.cn/legacy/
 
 jobs:
   verify:
@@ -141,6 +143,7 @@ jobs:
             echo "在 Settings → Secrets and variables → Actions 中添加后重跑本作业"
             exit 1
           fi
+          # Twine 协议：用户名任意（--token 会以 __token__ 作为用户名），密码为令牌
           uv publish --publish-url "$PYPI_PUBLISH_URL" --token "$UV_PUBLISH_TOKEN" dist/*
 
   release:
