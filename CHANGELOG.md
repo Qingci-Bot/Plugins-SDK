@@ -10,7 +10,7 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §5：打 `vX.Y.Z` tag 即自动
 校验、测试、构建、上传索引并创建 GitHub Release。
 
-## [Unreleased]
+## [1.15.0] - 2026-10-23（多模态图片解析）
 
 ### Added
 
