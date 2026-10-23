@@ -1,0 +1,19 @@
+# 本地提交钩子（可选）：把 CI 的静态检查前移，减少来回。
+# 启用：uv run pre-commit install
+# 手动全量跑：uv run pre-commit run --all-files
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # 与 uv.lock 锁定的 ruff 版本保持一致，避免本地与 CI 判定不同
+    rev: v0.16.3
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-toml
+      - id: check-yaml
+      - id: end-of-file-fixer
+      - id: trailing-whitespace

@@ -14,6 +14,11 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 
 ### Added
 
+- **`CONTRIBUTING.md`**：环境搭建、与 CI 一致的提交前检查、改动约定、发版指引
+- **`SECURITY.md`**：私密报告渠道（GitHub Security Advisories）、处理流程，并明确列出**有意为之的边界**（插件同进程运行、checker 异常按拒绝、`@llm_tool` 拒绝类方法等），避免这些设计被当成漏洞重复上报
+- **`.github/dependabot.yml`**：开发依赖与 GitHub Actions 每周自动更新，按组提 PR 减少噪音
+- **`.pre-commit-config.yaml`**：本地钩子（ruff / ruff-format / 文件规整），可选启用；`dev` extra 同步加入 `pre-commit`
+- **CI 覆盖率摘要**：每次运行把各模块覆盖率写入 Summary 页，翻历史即可对比趋势（不引入外部服务）
 - **测试补齐**：新增 `tests/test_base.py`（get_exports 失败分支、弃用钩子告警、register_page 探测）与 `tests/test_llm_tool.py`（类方法拒绝、收集器为栈）；`test_ratelimit` / `test_segments` / `test_rule` / `test_permission` 补边界与异常路径。覆盖率 92% → **96.5%**，测试数 219 → 257
 - **文档一致性测试 `tests/test_docs.py`（36 例）**：校验 README 全部 python 代码块的语法、`from qingci_plugin_sdk import X` 的符号是否存在，以及每个包级导出是否至少在 README 中出现一次
 
@@ -26,6 +31,7 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 - **README 会话阶梯示例补 `ctx.session` 判空**：该字段为 `Session | None`，原示例复制到类型检查环境即报错
 - **README 补「有类型提示吗」FAQ**：说明 `py.typed`、判空原因、动态属性按 `Any` 处理
 - **`docs/CODING_STANDARDS.md`**：mypy 范围含 `plugins/_template`；补「注入项必须标 `Any | None`」「模块级 `__all__` 与包级一致」两条约定；注明 README 代码块也会被 `ruff format` 处理
+- **`uv.lock` 来源改为官方 PyPI**：锁文件此前在配置了清华镜像的机器上生成，40 个包全部指向镜像。已用 `uv lock --default-index https://pypi.org/simple` 重新生成（版本零变化，仅换来源），并在 CI 增加「锁文件来源检查」拦截非官方索引
 
 ## [1.13.9] - 2026-10-20（下游类型体验修复）
 

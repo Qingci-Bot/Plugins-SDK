@@ -28,6 +28,18 @@ jobs:
       - name: Install (with dev extras)
         run: uv sync --extra dev
 
+      - name: Verify lock sources are canonical
+        # 在配置了镜像的机器上跑 uv lock 会把镜像地址写进锁文件，
+        # 换到官方源的环境就会判定锁文件过期。只允许官方 PyPI。
+        run: |
+          bad=$(grep -oE 'registry = "https://[^"]+"' uv.lock | sort -u                 | grep -vE 'https://pypi\.org/simple' || true)
+          if [ -n "$bad" ]; then
+            echo "::error::uv.lock 含非官方索引，请用 --default-index https://pypi.org/simple 重新生成"
+            echo "$bad"
+            exit 1
+          fi
+          echo "uv.lock 索引来源检查通过"
+
       - name: Lint (ruff)
         run: uv run --no-sync ruff check .
 
@@ -64,6 +76,18 @@ jobs:
 
       - name: Test (coverage gate)
         run: uv run --no-sync pytest -q --cov --cov-report=term-missing --cov-fail-under=90
+
+      - name: Coverage summary
+        # 覆盖率趋势没有外部服务，直接写进本次运行的 Summary 页，
+        # 翻历史运行即可对比各模块的变化
+        if: matrix.python-version == '3.12'
+        run: |
+          {
+            echo "### 覆盖率（py${{ matrix.python-version }}）"
+            echo '```'
+            uv run --no-sync coverage report
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   build:
     name: Build / Install smoke

@@ -37,11 +37,18 @@ Plugins-SDK/
 │   └── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
 ├── tests/                    # SDK 单元测试（pytest，不进入 wheel）
 ├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
+├── .github/
+│   ├── workflows/ci.yml      # 测试矩阵（3.10–3.14）/ lint / 构建冒烟
+│   ├── workflows/release.yml # 打 tag 即发版：校验 → 测试 → 构建 → 上传索引 → Release
+│   └── dependabot.yml        # 开发依赖与 action 的每周自动更新（分组提 PR）
 ├── pyproject.toml            # 包元数据（版本取自 __version__）、构建配置、ruff/mypy/coverage 配置
 ├── README.md                 # 插件开发指南（面向插件作者）
+├── CONTRIBUTING.md           # 贡献指南（环境搭建、提交前检查、改动约定）
+├── SECURITY.md               # 安全策略（私密报告渠道、威胁模型与有意为之的边界）
 ├── CHANGELOG.md              # 变更记录
 ├── LICENSE                   # GPL-3.0
 ├── uv.lock                   # uv 依赖锁（CI 以 UV_FROZEN=1 严格安装）
+├── .pre-commit-config.yaml   # 本地提交钩子（ruff / 格式 / 文件规整，可选启用）
 └── .gitignore                # 产物忽略规则
 ```
 
