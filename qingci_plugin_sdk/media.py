@@ -139,13 +139,19 @@ async def resolve_image(
     if ref.startswith(_PASSTHROUGH_PREFIXES):
         return ref
 
-    # 本地路径（部分适配器直接下发文件路径）
-    path = Path(ref)
-    if path.is_file():
-        return _from_local_file(path, max_bytes)
-
+    # base64:// 必须先于本地路径判断：内联图片可能长达数 MB，
+    # 当成路径去 stat 会在 Linux 上抛 OSError（File name too long）
     if ref.startswith(_BASE64_PREFIX):
         return _from_response({"base64": ref}, max_bytes)
+
+    # 本地路径（部分适配器直接下发文件路径）。
+    # is_file() 对超长/非法路径会抛 OSError，需兜住——不能因为一个坏引用中断整批解析。
+    try:
+        path = Path(ref)
+        if path.is_file():
+            return _from_local_file(path, max_bytes)
+    except OSError:
+        pass
 
     if connection is None:
         return None

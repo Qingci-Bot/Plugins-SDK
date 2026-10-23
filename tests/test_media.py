@@ -150,3 +150,28 @@ async def test_resolve_images_respects_max_count():
 async def test_resolve_images_empty_input():
     assert await resolve_images(_Conn({}), []) == []
     assert await resolve_images(_Conn({}), None) == []
+
+
+async def test_very_long_non_base64_ref_does_not_raise():
+    """超长非法引用（如异常 file_id）不应抛 OSError，而是按解析失败处理
+
+    回归：Linux 上 Path(ref).is_file() 对超长字符串会抛
+    OSError: File name too long，曾导致整批解析中断。
+    """
+    conn = _Conn({"get_image": {}, "get_file": {}})
+    assert await resolve_image(conn, "x" * 10000) is None
+
+
+async def test_batch_survives_bad_reference():
+    """批量解析中单个坏引用不影响其余项"""
+
+    class _Selective:
+        """只对已知 id 返回 url，其余返回空响应"""
+
+        async def call_api(self, action, params=None, timeout=30):
+            if (params or {}).get("file") == "opaque" or (params or {}).get("file_id") == "opaque":
+                return {"url": "https://cdn.example.com/ok.jpg"}
+            return {}
+
+    out = await resolve_images(_Selective(), ["x" * 10000, "opaque"], max_count=5)
+    assert out == ["https://cdn.example.com/ok.jpg"]
