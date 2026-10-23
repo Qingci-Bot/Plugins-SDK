@@ -47,7 +47,7 @@
   `from qingci_plugin_sdk.events import *` 能取到哪些名字，漏写会导致「包级能导入、模块级星号导入拿不到」。
   新增公开符号时两处同时补，并由 `tests/test_smoke.py` 的导出面断言兜底。
 - 工厂函数（`on_command` 等）返回装饰器，装饰器接收 handler 返回 `Matcher`——保持这一稳定的调用形态。
-- 新增能力若与主项目 `bot/plugin/protocol/` 对齐，签名与行为应保持一致；协议变更先在 SDK 发布，主项目通过 git 依赖版本锁定同步。
+- 新增能力若与主项目 `bot/plugin/protocol/` 对齐，签名与行为应保持一致；协议变更先在 SDK 发布并上传私有索引，主项目再提升依赖版本号同步。
 - 生命周期钩子在 `PluginBase` 上提供**默认空实现**（`on_startup`/`on_shutdown`/`on_bot_connect`/`on_metaevent`），插件按需覆写，框架无需判空。
 
 ## 5. 提交前检查
@@ -69,3 +69,23 @@ uv build                                 # 构建校验（wheel 内容守卫见 
 - 提交信息使用 [Conventional Commits](https://www.conventionalcommits.org/)：`feat:` / `fix:` / `docs:` / `refactor:` / `chore:`。
 - 大改动同步更新 `CHANGELOG.md`（`[Unreleased]` 段）与 `README.md`。
 - 不提交产物与缓存（见 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) 产物归属约定）。
+
+## 6. 发版流程
+
+1. 改 `qingci_plugin_sdk/__init__.py` 的 `__version__`——**唯一版本来源**，`pyproject.toml` 动态读取，不要另改
+2. 在 `CHANGELOG.md` 写 `## [X.Y.Z] - YYYY-MM-DD` 段落（Release 作业会用它作为发布说明正文）
+3. 提交并推送 `main`，确认 CI 三个作业全绿
+4. 打 tag 并推送：
+
+   ```bash
+   git tag -a vX.Y.Z -m "vX.Y.Z 简述"
+   git push origin vX.Y.Z
+   ```
+
+5. `.github/workflows/release.yml` 自动执行：校验 tag 与 `__version__` 一致、CHANGELOG 有该段 → 测试 + 静态检查 → 构建并守卫 wheel 内容 → 上传私有索引 → 创建 GitHub Release（附 wheel / sdist / SHA256SUMS）
+
+**前置条件**：仓库需配置 secret `QINGCI_PYPI_TOKEN`（索引上传令牌）。
+
+**为什么要有前置校验**：索引协议不允许同版本覆盖，wheel 一旦传错只能发新版本。因此「tag 与版本号不一致」「CHANGELOG 漏写」都在上传前拦截，而不是传完才发现。
+
+**主项目同步**：更新 `pyproject.toml` 的 `qingci-plugin-sdk==X.Y.Z`、`build.bat` 与 `build-linux.sh` 的安装命令，再重跑 `uv lock`（详见主项目 CONTRIBUTING）。

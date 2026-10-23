@@ -1,0 +1,179 @@
+name: Release
+
+# 打 tag 即发版：校验 → 测试 → 构建 → 上传私有索引 → 建 GitHub Release。
+# 此前全手工（build → 手动传 wheel → 手动发 Release），而索引不允许覆盖同版本，
+# 一旦传错只能发新版本，故加自动化与前置校验。
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  UV_FROZEN: "1"
+  PYPI_PUBLISH_URL: https://pypi.luoqingciya.cn/legacy/
+
+jobs:
+  verify:
+    name: Verify tag / changelog
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Tag matches __version__
+        # 版本单一来源是 qingci_plugin_sdk.__version__；tag 与它不一致时直接失败，
+        # 避免「发了 v1.14.0 的 tag、装出来还是 1.13.9」这类不可撤回的错误。
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          ver=$(python3 - <<'PY'
+          import re, pathlib
+          text = pathlib.Path("qingci_plugin_sdk/__init__.py").read_text(encoding="utf-8")
+          print(re.search(r'__version__\s*=\s*"([^"]+)"', text).group(1))
+          PY
+          )
+          echo "tag=$tag  __version__=$ver"
+          if [ "$tag" != "$ver" ]; then
+            echo "::error::tag v$tag 与 __version__ $ver 不一致，请先升级版本号再打 tag"
+            exit 1
+          fi
+
+      - name: CHANGELOG has an entry for this version
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          if ! grep -qE "^## \[$ver\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md 缺少 '## [$ver]' 段落"
+            exit 1
+          fi
+          echo "CHANGELOG 已记录 $ver"
+
+  test:
+    name: Test before publish
+    needs: verify
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.12.3"
+          enable-cache: true
+
+      - name: Install dependencies (locked)
+        run: uv sync --locked --python 3.12 --extra dev
+
+      - name: Lint / format / types
+        run: |
+          uv run --no-sync ruff check .
+          uv run --no-sync ruff format --check .
+          uv run --no-sync mypy qingci_plugin_sdk plugins/_template
+
+      - name: Test
+        run: uv run --no-sync pytest --cov --cov-fail-under=90
+
+  build:
+    name: Build distributions
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.12.3"
+
+      - name: Build
+        run: uv build
+
+      - name: Guard wheel contents
+        # wheel 必须带 py.typed，且不得泄漏 tests/ 与 plugins/（否则会装进下游
+        # site-packages，与宿主的同名目录冲突）
+        run: |
+          uv run --no-project python - <<'PY'
+          import glob, sys, zipfile
+          whl = glob.glob("dist/*.whl")[0]
+          names = zipfile.ZipFile(whl).namelist()
+          assert "qingci_plugin_sdk/py.typed" in names, "wheel 缺少 py.typed"
+          assert not any(n.startswith("tests/") for n in names), "wheel 泄漏 tests/"
+          assert not any(n.startswith("plugins/") for n in names), "wheel 泄漏 plugins/"
+          print(f"{whl}: {len(names)} 个文件，内容校验通过")
+          PY
+
+      - name: Checksums
+        run: cd dist && sha256sum *.whl *.tar.gz > SHA256SUMS && cat SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/*
+
+  publish:
+    name: Publish to private index
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.12.3"
+
+      - name: Publish
+        # 索引协议不允许同版本覆盖：重复上传会失败，这是有意的保护
+        env:
+          UV_PUBLISH_TOKEN: ${{ secrets.QINGCI_PYPI_TOKEN }}
+        run: |
+          if [ -z "$UV_PUBLISH_TOKEN" ]; then
+            echo "::error::缺少仓库 secret QINGCI_PYPI_TOKEN（私有索引上传令牌）"
+            echo "在 Settings → Secrets and variables → Actions 中添加后重跑本作业"
+            exit 1
+          fi
+          uv publish --publish-url "$PYPI_PUBLISH_URL" --token "$UV_PUBLISH_TOKEN" dist/*
+
+  release:
+    name: GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
+
+      - name: Extract release notes from CHANGELOG
+        run: |
+          ver="${GITHUB_REF_NAME#v}"
+          awk -v v="$ver" '
+            index($0, "## [" v "]") == 1 {flag=1; next}
+            flag && substr($0, 1, 4) == "## [" {exit}
+            flag {print}
+          ' CHANGELOG.md > notes.md
+          if [ ! -s notes.md ]; then
+            echo "未从 CHANGELOG 提取到内容，回退为自动生成"
+            rm -f notes.md
+          fi
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -f notes.md ]; then
+            gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md
+          else
+            gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+          fi

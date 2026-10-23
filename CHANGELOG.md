@@ -2,7 +2,27 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-SDK 独立版本演进；主项目 `Qingci-Bot-CE` 通过 git tag 锁定（pyproject / build.ps1 / uv.lock 三处一致）。
+SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z`）。
+
+主项目 `Qingci-Bot-CE` 以精确版本号锁定（`pyproject.toml` 的依赖声明 + `build.bat` /
+`build-linux.sh` 的安装命令 + `uv.lock` 三处一致），源由 `[[tool.uv.index]]` 绑定。
+
+发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §5：打 `vX.Y.Z` tag 即自动
+校验、测试、构建、上传索引并创建 GitHub Release。
+
+## [Unreleased]
+
+### Added
+
+- **文档一致性测试 `tests/test_docs.py`（36 例）**：校验 README 全部 python 代码块的语法、`from qingci_plugin_sdk import X` 的符号是否存在，以及每个包级导出是否至少在 README 中出现一次
+
+### Changed
+
+- **README 补「发送富文本消息（消息段）」章节**：`segments` 模块（`Message` / `MessageSegment` / `parse_cq_string` / v11↔v12 转换）此前是包级导出却无任何文档入口
+- **README 补「适配器与底层辅助」小节**：覆盖此前从未提及的 13 个导出符号
+- **README 会话阶梯示例补 `ctx.session` 判空**：该字段为 `Session | None`，原示例复制到类型检查环境即报错
+- **README 补「有类型提示吗」FAQ**：说明 `py.typed`、判空原因、动态属性按 `Any` 处理
+- **`docs/CODING_STANDARDS.md`**：mypy 范围含 `plugins/_template`；补「注入项必须标 `Any | None`」「模块级 `__all__` 与包级一致」两条约定；注明 README 代码块也会被 `ruff format` 处理
 
 ## [1.13.9] - 2026-10-20（下游类型体验修复）
 
