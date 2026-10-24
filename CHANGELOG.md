@@ -10,6 +10,21 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6：打 `vX.Y.Z` tag 即自动
 校验、测试、构建、上传索引并创建 GitHub Release。
 
+## [1.15.1] - 2026-10-24（文档与 docstring 修正）
+
+无运行时行为变更。修正的都是「照文档写会出错」或「代码说的事没发生」的表述。
+
+### Fixed
+
+- **`on_metaevent` 的「返回 `True` 表示已消费」是错的**：宿主分发时会把返回值丢掉（`dispatch_lifecycle` 只 `await` 不接），元事件是旁路通知——每个覆写钩子的插件都会收到，返回 `True` 不会阻止别人。原文还说这与 `on_request` 的审批语义「对齐」，但 `on_request` 的 `bool` 是真被消费的。已改为如实描述，并指出要拦截事件该用 Matcher 的 `block`
+- **i18n 的注释与宿主行为相反**：原文称「加载时不会自动 `load_dir`，需插件手动 `load_dir(self.data_dir / "i18n")`（宿主不代办）」。实际 Qingci-Bot-CE 会在 `on_load` 之前自动从**插件模块同级**的 `i18n/` 加载并应用全局语言；注释里的 `data_dir/i18n` 路径也不对。作者照注释写会 `load_dir` 一个不存在的目录、静默无效
+
+### Docs
+
+- **README 全面校正**：`__all__` 项数 82 → 85；扩展通知类「尚未从包根导出」已过时（全部已导出）；模块树补上 1.15.0 新增的 `media.py`；`plugin.json` 不是「替代类属性」而是导入前的元数据发现；`ctx.user_id` 的「v11 数字 / v12 字符串」与实测不符（宿主统一字符串化，插件拿到的永远是 `str`）；「多模态」示例在模块级装饰器里用了 `self`，复制即 `NameError`
+- **SECURITY**：支持版本表 1.13.x → 1.15.x / 1.14.x
+- **CODING_STANDARDS**：CI 矩阵 3.10–3.13 → 实际到 3.14；发版流程章节引用 §5 → §6
+
 ## [1.15.0] - 2026-10-23（多模态图片解析）
 
 ### Added
