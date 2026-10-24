@@ -61,7 +61,7 @@ uv run pytest --cov --cov-fail-under=90  # SDK 自测 + 分支覆盖率门槛（
 uv build                                 # 构建校验（wheel 内容守卫见 CI build job）
 ```
 
-- CI 在 Python 3.10 / 3.11 / 3.12 / 3.13 上运行测试（`requires-python >= 3.10` 的完整声明区间）。
+- CI 在 Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14 上运行测试（`requires-python >= 3.10` 的完整声明区间）。
 - 新增公开符号必须同时补 `__all__` 与 `tests/test_smoke.py` 的导出面断言。
 - **README 的 python 代码块也会被 `ruff format` 处理**（ruff 0.17+ 支持 Markdown 代码块），
   因此示例必须写成合法 Python；`tests/test_docs.py` 会校验代码块语法、导入符号是否存在，

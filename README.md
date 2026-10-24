@@ -71,6 +71,8 @@
 | uv | Python 包管理器 | `uv --version` |
 | 代码编辑器 | 写代码 | 推荐 [VS Code](https://code.visualstudio.com/) |
 
+> **关于 Python 版本**：SDK 本身支持 3.10+（CI 覆盖 3.10–3.14），但**宿主** Qingci-Bot-CE 从 1.19.0 起要求 **3.11+**。若插件只在主项目里跑，直接按 3.11+ 开发即可，避免用到 3.10 上没有的语法。
+
 > **没有 uv？** 在终端执行 `pip install uv` 即可安装。uv 比 pip 更快，是推荐的包管理工具。
 >
 > **没有 Python？** 去 [python.org](https://www.python.org/downloads/) 下载安装，安装时勾选「Add Python to PATH」。
@@ -285,6 +287,7 @@ Plugins-SDK/
 │   ├── session.py           # 会话阶梯（多轮交互）：Session + Pause/Finish/Reject 异常
 │   ├── i18n.py              # I18n 国际化翻译器
 │   ├── llm_tool.py          # @llm_tool 插件级 LLM 工具声明
+│   ├── media.py             # 图片引用解析（file_id → URL/data URI，多模态输入）
 │   └── paths.py             # app_root 路径解析 + data_root 覆盖钩子（供 data_dir 使用）
 ├── tests/                   # SDK 单元测试（pytest）
 └── plugins/                 # 你的插件源码都放在这里
@@ -336,7 +339,7 @@ Plugins-SDK/
 ```
 plugins/my_plugin/          # 目录名 = 插件名（不能以 _ 或 . 开头）
 ├── __init__.py              # 必需：插件入口，含 PluginBase 子类
-├── plugin.json              # 可选：元数据（替代类属性 name/version/author 等）
+├── plugin.json              # 可选：元数据（供宿主「无导入发现」，不合并类属性）
 ├── requirements.txt         # 可选：Python 第三方依赖（主项目自动安装，见常见问题）
 ├── utils.py                 # 可选：插件内部模块
 └── web/                     # 可选：Web 管理页面静态文件
@@ -508,7 +511,7 @@ async def on_group_request(ctx: MatcherContext, event: GroupRequestEvent) -> boo
 | 加群请求 | `GroupRequestEvent` | `group_id`, `comment`, `flag` |
 | 加好友请求 | `FriendRequestEvent` | `comment`, `flag` |
 
-> **导入说明**：上表中**基础通知/请求类**（`GroupIncreaseNotice` / `GroupDecreaseNotice` 等）已由包根 `__init__.py` 导出，可直接 `from qingci_plugin_sdk import ...`。而**扩展通知类**（`FriendPokeNotice` / `GroupLuckyKingNotice` / `GroupHonorChangeNotice` / `GroupCardNotice` / `GroupEssenceNotice` / `GroupSignInNotice`）定义在 `qingci_plugin_sdk.events` 中、**尚未从包根导出**，当前需显式 `from qingci_plugin_sdk.events import FriendPokeNotice` 等方式导入（后续版本会补上包根导出）。
+> **导入说明**：上表所有事件类均已由包根 `__init__.py` 导出，可直接 `from qingci_plugin_sdk import GroupIncreaseNotice, FriendPokeNotice, ...`；也可以从 `qingci_plugin_sdk.events` 导入，两条路径等价。
 
 **特性：**
 - 未知 `notice_type` 回退通用基类 `NoticeEvent`/`RequestEvent`（通用字段仍类型化）
@@ -602,9 +605,9 @@ handler 函数接收的 `ctx` 参数包含了当前消息的所有信息：
 ```python
 async def handler(ctx: MatcherContext) -> str:
     # 发送者信息
-    ctx.user_id  # 发送者 ID (str | int，v11 为数字 / v12 为字符串)
+    ctx.user_id  # 发送者 ID (str | int，见下方「ID 类型」)
     ctx.sender_name  # 发送者昵称 (str)
-    ctx.group_id  # 群号，私聊时为空字符串 (str | int)
+    ctx.group_id  # 群号；私聊时为空字符串 ""（不是 0，也不是 None）
 
     # 消息内容
     ctx.plain_text  # 纯文本消息 (str)
@@ -636,6 +639,12 @@ async def handler(ctx: MatcherContext) -> str:
     # 会话阶梯（多轮交互）
     ctx.session  # Session 对象：pause/finish/reject/send 控制多轮流程
 ```
+
+> **ID 类型**：类型标注是 `str | int`（历史原因，部分实现端/自定义适配器可能给数字），但**在主项目里实际拿到的总是 `str`**——宿主在事件入口把 OneBot 11 事件翻译为 v12 时统一做了字符串化（`translate_v11_event` 对 `user_id` / `group_id` / `operator_id` 都调了 `str()`）。因此：
+>
+> - 比较时统一按字符串：`ctx.user_id == "123456"`，**不要**写 `== 123456`（永远不会相等）
+> - 需要数字时自己转：`int(ctx.user_id)`，或先判空再转（`group_id` 私聊为空串，`int("")` 会抛异常）
+> - 自己拼会话键时也先归一：`f"{ctx.user_id}"`——若某个自定义适配器给了数字 `123`，不归一就会与 `"123"` 分裂成两个会话
 
 ### 多平台插件开发（QQ / Telegram）
 
@@ -868,7 +877,7 @@ class MyPlugin(PluginBase):
 
 ### 插件元数据发现（plugin.json）
 
-在插件目录下放置 `plugin.json`，无需导入模块即可发现插件元信息：
+在插件目录下放置 `plugin.json`，宿主无需导入模块即可发现插件元信息（Web 插件列表在加载前就能显示名称/版本/描述）：
 
 ```json
 {
@@ -880,6 +889,8 @@ class MyPlugin(PluginBase):
   "require": ["chat>=1.0"]
 }
 ```
+
+> **它不替代类属性**：插件加载后的 `name` / `version` / `require` 等一律以 `PluginBase` 子类的类属性为准，`plugin.json` 只用于「导入前」的元数据发现与 `requirements` 依赖声明。两处写得不一致时，以类属性为准。
 
 ### Web 管理页面（register_page）
 
@@ -1012,7 +1023,7 @@ from qingci_plugin_sdk import (
 )
 ```
 
-> 上面是**常用符号**清单。完整导出见 `qingci_plugin_sdk.__all__`（当前 82 项）；
+> 上面是**常用符号**清单。完整导出见 `qingci_plugin_sdk.__all__`（当前 85 项）；
 > 类型化事件见「类型化事件」章节，消息段工具（`Message` / `MessageSegment` / `parse_cq_string`）
 > 见「发送富文本消息（消息段）」。
 
@@ -1160,7 +1171,7 @@ async def get_time() -> str:
 
 ## 命令管理
 
-多个插件可能注册同名命令（如两个插件都注册 `/help`），调度时优先级高的胜出，其余被静默覆盖。框架提供命令管理能力，可在 WebUI 中查看冲突、禁用单条命令或调整优先级。
+多个插件可能注册同名命令（如两个插件都注册 `/help`），调度时**`priority` 数字最小的先执行**，命中后若 `block=True`（默认）就截断后续匹配器，其余同命令实际不会再执行。框架提供命令管理能力，可在 WebUI 中查看冲突、禁用单条命令或调整优先级。
 
 **命令冲突检测：**
 
@@ -1268,18 +1279,37 @@ msg.first_reply()  # 首个引用段（无则 None）
 `resolve_images()` 换成 `http(s)` URL 或 `data:` URI：
 
 ```python
-from qingci_plugin_sdk import MatcherContext, on_command, resolve_images
+from qingci_plugin_sdk import MatcherContext, PluginBase, on_command, resolve_images
 
 
-@on_command("看图")
-async def describe(ctx: MatcherContext) -> str:
-    if not ctx.images:
-        return "请附图后再试"
-    images = await resolve_images(self.connection, ctx.images)
-    if not images:
-        return "图片解析失败"
-    return await self.llm.chat(message=ctx.plain_text, images=images)
+class VisionPlugin(PluginBase):
+    name = "vision"
+
+    async def on_load(self):
+        # 在插件内注册：handler 是 self 的方法，才能用 self.connection / self.llm
+        self.matchers.append(on_command("看图")(self._describe))
+
+    async def on_unload(self):
+        pass
+
+    async def _describe(self, ctx: MatcherContext) -> str:
+        if not ctx.images:
+            return "请附图后再试"
+        images = await resolve_images(self.connection, ctx.images)
+        if not images:
+            return "图片解析失败"
+        reply = await self.llm.chat(
+            message=ctx.plain_text,
+            message_type=ctx.message_type,
+            # ctx.group_id 私聊是空串、且统一为 str；chat() 形参标注是 int，显式转换
+            group_id=int(ctx.group_id or 0),
+            user_id=int(ctx.user_id or 0),
+            images=images,
+        )
+        return reply or "（模型没有返回内容）"
 ```
+
+> 用**模块级装饰器**（`@on_command(...)` 写在类外面）时没有 `self`，需改用 `ctx.bot.connection` / `ctx.bot.llm`。
 
 **它做了什么：**
 
@@ -1305,13 +1335,16 @@ async def describe(ctx: MatcherContext) -> str:
 async def _handle_ai(self, ctx: MatcherContext) -> str:
     # 简单调用
     reply = await self.llm.chat(
-        user_id=ctx.user_id,  # 用户标识（用于会话隔离）
-        group_id=ctx.group_id,  # 群标识（私聊为 0）
         message=ctx.args,  # 用户输入
+        message_type=ctx.message_type,  # "private" / "group"：决定会话键形态
+        user_id=int(ctx.user_id or 0),  # 用户标识（会话隔离）
+        group_id=int(ctx.group_id or 0),  # 群标识；私聊时 ctx.group_id 是 ""，转成 0
         system_prompt="你是一个助人为乐的助手",  # 可选，覆盖系统提示词
     )
-    return reply
+    return reply or "（模型没有返回内容）"
 ```
+
+> `chat()` 返回 `str | None`（调用失败时为 `None`），直接 `return` 会被当成「不回复」，建议给个兜底文案。
 
 ### 定时任务
 

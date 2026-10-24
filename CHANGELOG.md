@@ -7,7 +7,7 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 主项目 `Qingci-Bot-CE` 以精确版本号锁定（`pyproject.toml` 的依赖声明 + `build.bat` /
 `build-linux.sh` 的安装命令 + `uv.lock` 三处一致），源由 `[[tool.uv.index]]` 绑定。
 
-发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §5：打 `vX.Y.Z` tag 即自动
+发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6：打 `vX.Y.Z` tag 即自动
 校验、测试、构建、上传索引并创建 GitHub Release。
 
 ## [1.15.0] - 2026-10-23（多模态图片解析）
@@ -15,6 +15,10 @@ SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z
 ### Added
 
 - **`resolve_image` / `resolve_images`（新增 `media` 模块）**：把平台图片引用换成模型可读取的 `http(s)` URL 或 `data:` URI。此前 `ctx.images` 里是不透明 `file_id`（OneBot 12 / Telegram 都是），直接传给 LLM 无效。支持 URL / `data:` 直通、`base64://` 解码、本地文件编码，以及经平台 API（`get_image` / `get_file`）换取 `url` / `base64` / 文件路径。零运行时依赖，只解析不下载；单图默认上限 4 MiB，批量默认最多 4 张
+
+### Fixed
+
+- **`base64://` 判断前置，避免 Linux 上抛 `OSError`**：内联 base64 图片可能长达数 MB，此前先走本地路径判断（`Path(ref).is_file()`），在 Linux 上会因文件名超长抛 `OSError: File name too long`（Windows 返回 False，故本地测不出来）。现改为 base64 前缀先判定，并给路径判断套 `OSError` 兜底。该修复包含在 v1.15.0 tag 内
 
 ## [1.14.0] - 2026-10-23（弃用告警与工程化收口）
 

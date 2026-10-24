@@ -28,6 +28,7 @@ Plugins-SDK/
 │   ├── ratelimit.py          # RateLimiter 限流
 │   ├── i18n.py               # I18n 国际化翻译器
 │   ├── llm_tool.py           # @llm_tool 插件级 LLM 工具声明
+│   ├── media.py              # 图片引用解析（file_id → URL/data URI，多模态输入）
 │   ├── events.py             # 类型化事件模型（NoticeEvent/RequestEvent 及子类 + 解析工厂）
 │   ├── session.py            # 会话阶梯（Session + Pause/Finish/Reject 控制流异常）
 │   ├── paths.py              # 路径解析：app_root 定位 + data_root 覆盖钩子（供 data_dir 重定向）

@@ -6,7 +6,7 @@
 推荐目录结构：
   plugins/your_plugin/
     ├── __init__.py      # 插件入口（必需）
-    ├── plugin.json       # 元数据（可选，替代类属性）
+    ├── plugin.json       # 元数据（可选，供宿主无导入发现，不合并类属性）
     └── web/              # Web 管理页面（可选）
         └── index.html
 
@@ -15,7 +15,7 @@
 2. 复制目录: cp -r plugins/_template plugins/my_plugin
 3. 修改类名和 name 属性
 4. 在 on_load 中注册 Matcher
-5. 开发完成后复制到 Qingci-Bot/plugins/ 目录
+5. 开发完成后复制到 Qingci-Bot 的实例插件目录（instances/<name>/plugins/；源码运行时为 plugins/）
 
 ====== Matcher 类型 ======
 - on_command:    命令触发  "/ping" -> 自动解析命令名和参数
