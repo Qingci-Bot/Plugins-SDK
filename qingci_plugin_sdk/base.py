@@ -145,8 +145,10 @@ class PluginBase(ABC):
         self._status = PluginStatus.LOADING
         self._data_dir_cache = None
         # 国际化：插件可声明 i18n/<locale>.json 翻译资源，self._ = self.i18n.t。
-        # 注意：加载时不会自动 load_dir；需插件在 on_load 手动调用
-        # self.i18n.load_dir(self.data_dir / "i18n") 加载（宿主不代办）。
+        # 翻译文件放在**插件模块同级**的 i18n/ 目录（如 plugins/<name>/i18n/zh-CN.json），
+        # 宿主加载插件时自动 load_dir 并应用全局语言（Qingci-Bot-CE 的
+        # PluginManager._load_i18n → load_plugin_i18n），插件无需手动调用。
+        # 独立开发（无宿主）时才需要自己 self.i18n.load_dir(<插件目录>)。
         from .i18n import I18n
 
         self.i18n = I18n("zh-CN")
@@ -381,6 +383,11 @@ class PluginBase(ABC):
     async def on_metaevent(self, event: dict) -> bool | None:
         """处理元事件（生命周期，如 heartbeat / connect / enable）
 
-        返回 True 表示已消费该事件（与 on_request 的审批语义对齐）。
+        旁路通知：宿主向每个覆写了本钩子的插件各调一次，**忽略返回值**——没有
+        「消费掉、后续插件不再收到」的语义。返回 ``True`` 不会阻止其他插件收到，
+        也不会影响事件分发。
+
+        需要拦截事件用 Matcher 的 ``block``；需要审批加好友/加群用
+        ``on_request`` 返回 ``bool``（那个返回值是真被消费的）。
         """
         return None
