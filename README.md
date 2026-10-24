@@ -1073,9 +1073,11 @@ class MyPlugin(PluginBase):
         ...
     async def on_bot_connect(self):  # QQ 会话连接/重连
         ...
-    async def on_metaevent(self, event: dict) -> bool | None:  # 元事件，返回 True 表示已消费
+    async def on_metaevent(self, event: dict) -> bool | None:  # 旁路通知
         ...
 ```
+
+> `on_metaevent` 是**旁路通知**：每个覆写了它的插件都会收到，没有「消费掉、后续插件不再收到」的语义（宿主分发时会忽略返回值）。需要拦截事件请用 Matcher 的 `block`，需要审批加好友/加群请用 `on_request` 返回 `bool`。
 
 #### 国际化 i18n（1.4.0）
 
