@@ -68,3 +68,19 @@ def test_readme_documents_every_package_export():
     text = README.read_text(encoding="utf-8")
     undocumented = [name for name in sdk.__all__ if name not in text and name != "__version__"]
     assert not undocumented, f"README 未提及的导出符号：{undocumented}"
+
+
+_EXPORT_COUNT = re.compile(r"__all__`?（当前 (\d+) 项）")
+
+
+def test_readme_export_count_matches():
+    """README 里写死的导出项数必须与实际 __all__ 一致
+
+    这个数字最容易被忘掉：每次新增导出都会让它变成谎话，而读者没有理由怀疑它。
+    """
+    matched = _EXPORT_COUNT.findall(README.read_text(encoding="utf-8"))
+    assert matched, "README 里找不到「（当前 N 项）」的导出项数说明（正则失配会导致本测试空转）"
+    for stated in matched:
+        assert int(stated) == len(sdk.__all__), (
+            f"README 写着 __all__ 有 {stated} 项，实际 {len(sdk.__all__)} 项"
+        )
