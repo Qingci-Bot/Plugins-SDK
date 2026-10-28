@@ -2,13 +2,13 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-SDK 独立版本演进，经私有 PyPI 索引分发（`qingci-plugin-sdk==X.Y.Z`）。
-
-主项目 `Qingci-Bot-CE` 以精确版本号锁定（`pyproject.toml` 的依赖声明 + `build.bat` /
-`build-linux.sh` 的安装命令 + `uv.lock` 三处一致），源由 `[[tool.uv.index]]` 绑定。
+SDK 独立版本演进。**安装来源是 GitHub Release 上的 wheel**：主项目 `Qingci-Bot-CE` 在
+`pyproject.toml` 里以直接 URL 依赖它（`qingci-plugin-sdk @ https://github.com/.../releases/download/vX.Y.Z/...whl`），
+`uv.lock` 记录 URL 与 SHA256。私有制品仓库（`pypi.luoqingciya.cn`）保留作归档与门户展示，
+自 2026-10-28 起不再提供 PEP 503 索引，不参与安装。
 
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6：打 `vX.Y.Z` tag 即自动
-校验、测试、构建、上传索引并创建 GitHub Release。
+校验、测试、构建 wheel、上传私有索引（归档）并创建 GitHub Release（分发来源）。
 
 ## [1.15.1] - 2026-10-24（文档与 docstring 修正）
 

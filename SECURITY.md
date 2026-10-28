@@ -47,6 +47,6 @@ SDK 运行在**宿主进程内**，与插件代码同权限。以下几点是有
 
 ## 供应链
 
-- SDK 经私有 PyPI 索引分发，主项目以精确版本号 + wheel SHA256 锁定
+- 分发走 GitHub Release 上的 wheel，主项目以直接 URL + wheel SHA256 锁定；私有索引仅作归档
 - 索引不允许同版本覆盖；发布流水线在上传前校验 tag 与 `__version__` 一致
 - 第三方依赖：SDK 运行时依赖为空，开发依赖仅 pytest / ruff / mypy
