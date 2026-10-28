@@ -47,7 +47,7 @@
   `from qingci_plugin_sdk.events import *` 能取到哪些名字，漏写会导致「包级能导入、模块级星号导入拿不到」。
   新增公开符号时两处同时补，并由 `tests/test_smoke.py` 的导出面断言兜底。
 - 工厂函数（`on_command` 等）返回装饰器，装饰器接收 handler 返回 `Matcher`——保持这一稳定的调用形态。
-- 新增能力若与主项目 `bot/plugin/protocol/` 对齐，签名与行为应保持一致；协议变更先在 SDK 发布并上传私有索引，主项目再提升依赖版本号同步。
+- 新增能力若与主项目 `bot/plugin/protocol/` 对齐，签名与行为应保持一致；协议变更先在 SDK 发版（Release 带 wheel），主项目再更新依赖 URL 的版本并重新锁定。
 - 生命周期钩子在 `PluginBase` 上提供**默认空实现**（`on_startup`/`on_shutdown`/`on_bot_connect`/`on_metaevent`），插件按需覆写，框架无需判空。
 
 ## 5. 提交前检查
@@ -82,7 +82,7 @@ uv build                                 # 构建校验（wheel 内容守卫见 
    git push origin vX.Y.Z
    ```
 
-5. `.github/workflows/release.yml` 自动执行：校验 tag 与 `__version__` 一致、CHANGELOG 有该段 → 测试 + 静态检查 → 构建 wheel 并守卫其内容 → 上传私有索引 → 创建 GitHub Release（附 wheel / SHA256SUMS）
+5. `.github/workflows/release.yml` 自动执行：校验 tag 与 `__version__` 一致、CHANGELOG 有该段 → 测试 + 静态检查 → 构建 wheel 并守卫其内容 → 上传私有索引（归档）→ 查门户 API 确认制品已入库 → 创建 GitHub Release（附 wheel / SHA256SUMS，**分发来源**）
 
 **只发 wheel，不发 sdist**：本包是纯 Python，wheel 通用；sdist 对插件开发者没有额外价值，却要多维护一份产物、多跑一次隔离构建。`uv build --wheel` 只出 wheel，索引与 Release 也只收 wheel。
 
@@ -90,4 +90,4 @@ uv build                                 # 构建校验（wheel 内容守卫见 
 
 **为什么要有前置校验**：索引协议不允许同版本覆盖，wheel 一旦传错只能发新版本。因此「tag 与版本号不一致」「CHANGELOG 漏写」都在上传前拦截，而不是传完才发现。
 
-**主项目同步**：更新 `pyproject.toml` 的 `qingci-plugin-sdk==X.Y.Z`、`build.bat` 与 `build-linux.sh` 的安装命令，再重跑 `uv lock`（详见主项目 CONTRIBUTING）。
+**主项目同步**：把 `pyproject.toml` 里 SDK 直链 URL 的 tag 与文件名两处版本号一起改成新版本，再重跑 `uv lock`（详见主项目 CONTRIBUTING）。主项目 CI 会断言两处版本一致、且与已安装版本相符。

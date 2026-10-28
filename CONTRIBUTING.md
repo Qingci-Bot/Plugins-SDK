@@ -1,6 +1,6 @@
 # 贡献指南
 
-> 本仓库是 `Qingci-Bot-CE` 的插件协议层 SDK，独立版本演进、经私有索引分发。
+> 本仓库是 `Qingci-Bot-CE` 的插件协议层 SDK，独立版本演进，以 GitHub Release 上的 wheel 分发。
 > 代码规范见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md)，目录职责见
 > [docs/PROJECT_STRUCTURE.md](docs/PROJECT_STRUCTURE.md)。本文只讲「怎么参与」。
 
@@ -61,7 +61,7 @@ chore: 杂项
 ## 发版
 
 维护者操作，流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6。
-打 `vX.Y.Z` tag 后流水线自动校验、测试、构建、上传私有索引并创建 GitHub Release。
+打 `vX.Y.Z` tag 后流水线自动校验、测试、构建 wheel、上传私有索引（归档）并创建 GitHub Release。
 
-发版后记得同步主项目：更新 `pyproject.toml` 的 `qingci-plugin-sdk==X.Y.Z`、
-`build.bat` / `build-linux.sh` 的安装命令，并重跑 `uv lock`。
+发版后记得同步主项目：把 `pyproject.toml` 里 SDK 直链 URL 的 **tag 与文件名两处版本号**
+一起改成新版本，再重跑 `uv lock`（主项目 CI 会校验两处一致且与已安装版本相符）。
