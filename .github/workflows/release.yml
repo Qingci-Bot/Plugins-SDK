@@ -18,8 +18,14 @@ concurrency:
 env:
   # 不设 UV_FROZEN：发版作业用 --locked 显式校验锁文件与 pyproject 一致
   # （UV_FROZEN 与 --locked 互斥，同时出现会直接报参数冲突）
-  # 上传走后台域名（与安装用的索引域名分开）：
-  # 索引 https://pypi.luoqingciya.cn/simple ，上传 https://admin.pypi.luoqingciya.cn/legacy/
+  #
+  # 分发只走 wheel：sdist 对插件开发者没有价值（本包是纯 Python，wheel 通用），
+  # 却会在索引里多一份需要维护的产物，且构建 sdist 会触发一次额外的隔离构建。
+  # 因此 uv build 只出 wheel，索引与 GitHub Release 也都只传 wheel。
+  #
+  # 上传仍是 Twine 协议的 legacy 端点（后台域名，与门户域名分开）：
+  #   门户/API  https://pypi.luoqingciya.cn/       （/api/v1/packages 等只读接口）
+  #   上传      https://admin.pypi.luoqingciya.cn/legacy/
   PYPI_PUBLISH_URL: https://admin.pypi.luoqingciya.cn/legacy/
 
 jobs:
@@ -92,8 +98,9 @@ jobs:
         with:
           version: "0.12.3"
 
-      - name: Build
-        run: uv build
+      - name: Build wheel
+        # 只出 wheel：sdist 不参与分发（见文件头 env 注释）
+        run: uv build --wheel
 
       - name: Guard wheel contents
         # wheel 必须带 py.typed，且不得泄漏 tests/ 与 plugins/（否则会装进下游
@@ -110,12 +117,14 @@ jobs:
           PY
 
       - name: Checksums
-        run: cd dist && sha256sum *.whl *.tar.gz > SHA256SUMS && cat SHA256SUMS
+        run: cd dist && sha256sum *.whl > SHA256SUMS && cat SHA256SUMS
 
       - uses: actions/upload-artifact@v4
         with:
           name: dist
-          path: dist/*
+          path: |
+            dist/*.whl
+            dist/SHA256SUMS
 
   publish:
     name: Publish to private index
@@ -144,8 +153,53 @@ jobs:
             echo "在 Settings → Secrets and variables → Actions 中添加后重跑本作业"
             exit 1
           fi
-          # Twine 协议：用户名任意（--token 会以 __token__ 作为用户名），密码为令牌
-          uv publish --publish-url "$PYPI_PUBLISH_URL" --token "$UV_PUBLISH_TOKEN" dist/*
+          # Twine 协议：用户名任意（--token 会以 __token__ 作为用户名），密码为令牌。
+          # 令牌在仓库 secret QINGCI_PYPI_TOKEN 中，作用域限定 qingci_plugin_sdk 文件夹。
+          # 只传 wheel（sdist 不参与分发）。
+          uv publish --publish-url "$PYPI_PUBLISH_URL" --token "$UV_PUBLISH_TOKEN" dist/*.whl
+
+      - name: Verify it landed in the index
+        # 上传返回 2xx 不等于制品已入库（新仓库按文件夹归档，写盘与索引可能不同步）。
+        # 直接查门户 API 确认版本与 wheel 文件名，避免「tag 发了、Release 也建了，
+        # 但下游装不到」——索引不允许覆盖同版本，这种错误只能发新版本才能修。
+        env:
+          TOKEN: ${{ secrets.QINGCI_PYPI_TOKEN }}
+        run: |
+          python3 - "$GITHUB_REF_NAME" <<'PY'
+          import json, os, sys, time, urllib.error, urllib.request
+
+          tag = sys.argv[1].lstrip("v")
+          url = "https://pypi.luoqingciya.cn/api/v1/packages/qingci-plugin-sdk"
+          req = urllib.request.Request(
+              url, headers={"Authorization": f"Bearer {os.environ['TOKEN']}"}
+          )
+
+          for attempt in range(1, 6):
+              try:
+                  with urllib.request.urlopen(req, timeout=20) as resp:
+                      data = json.load(resp)
+              except urllib.error.HTTPError as e:
+                  if e.code in (401, 403):
+                      print(f"::warning::令牌无读取权限（HTTP {e.code}），跳过入库校验")
+                      sys.exit(0)
+                  print(f"第 {attempt} 次查询失败：HTTP {e.code}")
+                  time.sleep(5)
+                  continue
+              except Exception as e:  # noqa: BLE001 - 网络抖动按重试处理
+                  print(f"第 {attempt} 次查询失败：{e}")
+                  time.sleep(5)
+                  continue
+
+              if tag in data.get("versions", []):
+                  files = [f["filename"] for f in data.get("files", []) if f.get("version") == tag]
+                  assert any(n.endswith(".whl") for n in files), f"{tag} 没有 wheel：{files}"
+                  print(f"索引已收录 {tag}：{files}")
+                  sys.exit(0)
+              print(f"第 {attempt} 次未查到 {tag}，5 秒后重试")
+              time.sleep(5)
+
+          sys.exit(f"上传后未在索引中查到 {tag}（制品可能落在错误的文件夹）")
+          PY
 
   release:
     name: GitHub Release
@@ -176,8 +230,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # 只挂 wheel 与校验和；sdist 不参与分发
+          assets=(dist/*.whl dist/SHA256SUMS)
           if [ -f notes.md ]; then
-            gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --notes-file notes.md
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" --title "$GITHUB_REF_NAME" --notes-file notes.md
           else
-            gh release create "$GITHUB_REF_NAME" dist/* --title "$GITHUB_REF_NAME" --generate-notes
+            gh release create "$GITHUB_REF_NAME" "${assets[@]}" --title "$GITHUB_REF_NAME" --generate-notes
           fi
