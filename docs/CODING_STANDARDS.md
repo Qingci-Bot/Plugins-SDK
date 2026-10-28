@@ -82,7 +82,9 @@ uv build                                 # 构建校验（wheel 内容守卫见 
    git push origin vX.Y.Z
    ```
 
-5. `.github/workflows/release.yml` 自动执行：校验 tag 与 `__version__` 一致、CHANGELOG 有该段 → 测试 + 静态检查 → 构建并守卫 wheel 内容 → 上传私有索引 → 创建 GitHub Release（附 wheel / sdist / SHA256SUMS）
+5. `.github/workflows/release.yml` 自动执行：校验 tag 与 `__version__` 一致、CHANGELOG 有该段 → 测试 + 静态检查 → 构建 wheel 并守卫其内容 → 上传私有索引 → 创建 GitHub Release（附 wheel / SHA256SUMS）
+
+**只发 wheel，不发 sdist**：本包是纯 Python，wheel 通用；sdist 对插件开发者没有额外价值，却要多维护一份产物、多跑一次隔离构建。`uv build --wheel` 只出 wheel，索引与 Release 也只收 wheel。
 
 **前置条件**：仓库需配置 secret `QINGCI_PYPI_TOKEN`（索引上传令牌）。
 
