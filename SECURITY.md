@@ -47,6 +47,7 @@ SDK 运行在**宿主进程内**，与插件代码同权限。以下几点是有
 
 ## 供应链
 
-- 分发走 GitHub Release 上的 wheel，主项目以直接 URL + wheel SHA256 锁定；私有索引仅作归档
-- 索引不允许同版本覆盖；发布流水线在上传前校验 tag 与 `__version__` 一致
+- SDK 自 1.15.2 起仅经官方 PyPI 分发，不再上传私有索引或向 GitHub Release 挂产物；历史 Release 保留供旧直链依赖解析
+- PyPI 发布走 Trusted Publishing（OIDC 短期令牌），仓库不保存长期 API token；发布作业仅有 `id-token: write` 权限且不与构建作业共享
+- PyPI 不允许同版本覆盖；发布流水线在上传前校验 tag 与 `__version__` 一致，上传后校验制品已入库
 - 第三方依赖：SDK 运行时依赖为空，开发依赖仅 pytest / ruff / mypy

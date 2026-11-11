@@ -2,13 +2,28 @@
 
 本文件遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/) 与 [语义化版本](https://semver.org/lang/zh-CN/)。
 
-SDK 独立版本演进。**安装来源是 GitHub Release 上的 wheel**：主项目 `Qingci-Bot-CE` 在
-`pyproject.toml` 里以直接 URL 依赖它（`qingci-plugin-sdk @ https://github.com/.../releases/download/vX.Y.Z/...whl`），
-`uv.lock` 记录 URL 与 SHA256。私有制品仓库（`pypi.luoqingciya.cn`）保留作归档与门户展示，
-自 2026-10-28 起不再提供 PEP 503 索引，不参与安装。
+SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`https://pypi.org/project/qingci-plugin-sdk/`），
+由 Trusted Publishing（OIDC）上传；不再上传私有制品仓库，也不再创建 GitHub Release / 挂 wheel 与校验和。
+历史 Release（v1.15.1 及以前）保留，供主项目 `Qingci-Bot-CE` 现有的直链 URL + SHA256 依赖继续解析；
+该依赖将在首版 PyPI 发布后切换为 PyPI 版本约束，届时重跑 `uv lock`。
 
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6：打 `vX.Y.Z` tag 即自动
-校验、测试、构建 wheel、上传私有索引（归档）并创建 GitHub Release（分发来源）。
+校验、测试、构建 wheel、上传 PyPI 并校验入库。
+
+## [1.15.2] - 2026-11-11（发布渠道切换到 PyPI）
+
+无运行时行为变更，仅调整 SDK 的发版与分发方式。
+
+### Changed
+
+- **分发渠道改为官方 PyPI**：`qingci-plugin-sdk` 由 Trusted Publishing（OIDC）上传，仓库不再保存任何上传令牌；私有制品仓库与 GitHub Release 均不再接收 wheel
+- 发布流水线删除 GitHub Release 作业，上传后校验改用公开的 PyPI JSON API
+- 发布作业权限收敛为 `id-token: write` 且与构建作业隔离；顶层权限降为 `contents: read`
+- 同步更新发版文档、`CONTRIBUTING.md`、`SECURITY.md`
+
+### 注意
+
+主项目 `Qingci-Bot-CE` 仍锁定 GitHub Release 上的 v1.15.1 wheel。历史 Release 保留不删，待其依赖切换到 PyPI 后旧直链才停止使用。
 
 ## [1.15.1] - 2026-10-24（文档与 docstring 修正）
 
