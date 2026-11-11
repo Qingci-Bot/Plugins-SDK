@@ -4,11 +4,21 @@
 
 SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`https://pypi.org/project/qingci-plugin-sdk/`），
 由 Trusted Publishing（OIDC）上传；不再上传私有制品仓库，也不再创建 GitHub Release / 挂 wheel 与校验和。
-历史 Release（v1.15.1 及以前）保留，供主项目 `Qingci-Bot-CE` 现有的直链 URL + SHA256 依赖继续解析；
-该依赖将在首版 PyPI 发布后切换为 PyPI 版本约束，届时重跑 `uv lock`。
+首版 1.15.2 已于 2026-11-11 发布。历史 Release（v1.15.1 及以前）保留，供主项目 `Qingci-Bot-CE`
+现有的直链 URL + SHA256 依赖继续解析；该依赖切换为 PyPI 版本约束时需重跑 `uv lock`。
 
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6：打 `vX.Y.Z` tag 即自动
 校验、测试、构建 wheel、上传 PyPI 并校验入库。
+
+## [Unreleased]
+
+### 文档
+
+- 全仓文档校对：统一「仅 PyPI 分发 / Trusted Publishing / 1.15.2」的现状表述，删除残留的私有索引与 GitHub Release 分发说明
+- `README.md` 补充从 PyPI 安装 SDK 的方式与完整文档导航；`PROJECT_STRUCTURE.md` 修正 `release.yml` 职责描述
+- `CODING_STANDARDS.md` / `CONTRIBUTING.md` 补全 PR 合并与 7 项必需状态检查、开发依赖清单、锁文件来源注意、ruff 版本说明
+- `SECURITY.md` 补全供应链与开发依赖描述
+- 补齐 `CHANGELOG.md` 中 1.15.2 → 1.8.0 各版本的链接定义（1.15.2 指向 PyPI，其余指向对应 Release），移除 6 个指向不存在 tag 的早期死链
 
 ## [1.15.2] - 2026-11-11（发布渠道切换到 PyPI）
 
@@ -323,9 +333,29 @@ SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`h
 - `Permission` 权限体系、`RateLimiter` 限流。
 - 插件开发指南 `README.md` 与插件模板 `_template`。
 
-[1.6.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.6.0
-[1.5.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.5.1
-[1.5.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.5.0
-[1.4.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.4.1
-[1.4.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.4.0
-[1.0.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.0.0
+[1.15.2]: https://pypi.org/project/qingci-plugin-sdk/1.15.2/
+[1.15.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.15.1
+[1.15.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.15.0
+[1.14.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.14.0
+[1.13.9]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.9
+[1.13.8]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.8
+[1.13.7]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.7
+[1.13.6]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.6
+[1.13.5]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.5
+[1.13.4]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.4
+[1.13.3]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.3
+[1.13.2]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.2
+[1.13.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.1
+[1.13.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.0
+[1.12.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.12.0
+[1.11.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.11.0
+[1.10.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.10.1
+[1.10.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.10.0
+[1.9.4]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.4
+[1.9.3]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.3
+[1.9.2]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.2
+[1.9.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.1
+[1.9.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.0
+[1.8.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.8.0
+
+<!-- 1.6.0 及更早版本未打 tag、未建 Release，故不设链接定义。 -->

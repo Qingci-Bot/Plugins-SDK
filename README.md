@@ -14,8 +14,11 @@
 
 **相关文档：**
 - [项目结构规范](docs/PROJECT_STRUCTURE.md) — 目录职责与产物归属
-- [编码规范](docs/CODING_STANDARDS.md) — SDK 代码组织与约定
+- [编码规范](docs/CODING_STANDARDS.md) — 代码组织、提交前检查与发版流程
+- [贡献指南](CONTRIBUTING.md) — 开发环境、提交与 PR 流程
+- [安全策略](SECURITY.md) — 漏洞报告与供应链
 - [变更记录](CHANGELOG.md) — 版本历史
+- [PyPI 包页面](https://pypi.org/project/qingci-plugin-sdk/) — 已发布版本与 wheel
 
 ---
 
@@ -111,11 +114,24 @@ source .venv/bin/activate
 
 ### 第四步：安装 SDK
 
+上面的流程假设你克隆了本仓库、要在本地改 SDK 源码，所以用**可编辑安装**：
+
 ```bash
 uv pip install -e .
 ```
 
-这条命令做了什么？它把 `qingci_plugin_sdk` 这个包安装到虚拟环境中，之后你就可以在代码里 `from qingci_plugin_sdk import ...` 了。
+这条命令把 `qingci_plugin_sdk` 这个包安装到虚拟环境中，之后你就可以在代码里
+`from qingci_plugin_sdk import ...` 了；改动 SDK 源码会立即生效。
+
+如果你只是写插件、不需要改 SDK 源码，直接装 [PyPI](https://pypi.org/project/qingci-plugin-sdk/) 上的发布版即可，
+不用克隆本仓库：
+
+```bash
+uv add qingci-plugin-sdk      # 或 pip install qingci-plugin-sdk
+```
+
+两种方式装出来的导入名都是 `qingci_plugin_sdk`，插件代码无需区分。本教程后续步骤仍以
+「克隆了本仓库」为前提，继续使用可编辑安装。
 
 ### 第五步：验证安装
 

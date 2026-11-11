@@ -6,7 +6,8 @@ name: Release
 # 一旦传错只能发新版本，故加自动化与前置校验。
 #
 # 认证走 PyPI Trusted Publishing（OIDC）：仓库不保存任何长期 API token。
-# PyPI 侧需配置 publisher（项目尚未创建时用 pending publisher），字段必须与本文件一致：
+# PyPI 项目 qingci-plugin-sdk 已于 1.15.2 首版创建，publisher 在其 Settings → Publishing 维护
+# （首版用的是 pending publisher，首次上传后自动转为正式 publisher）。字段必须与本文件一致：
 #   项目名 qingci-plugin-sdk / owner Qingci-Bot / 仓库 Plugins-SDK
 #   workflow release.yml / environment pypi
 # 详见 docs/CODING_STANDARDS.md §6。
