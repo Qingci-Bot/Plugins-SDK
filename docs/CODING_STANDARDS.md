@@ -72,8 +72,10 @@ uv build                                 # 构建校验（wheel 内容守卫见 
 
 ## 6. 发版流程
 
+**分发渠道只有官方 PyPI**（`https://pypi.org/project/qingci-plugin-sdk/`）：不再上传私有索引，也不再创建 GitHub Release / 挂 wheel。历史 Release（v1.15.1 及以前）保留，仅供主项目旧直链依赖继续解析。
+
 1. 改 `qingci_plugin_sdk/__init__.py` 的 `__version__`——**唯一版本来源**，`pyproject.toml` 动态读取，不要另改
-2. 在 `CHANGELOG.md` 写 `## [X.Y.Z] - YYYY-MM-DD` 段落（Release 作业会用它作为发布说明正文）
+2. 在 `CHANGELOG.md` 写 `## [X.Y.Z] - YYYY-MM-DD` 段落（verify 作业会检查它存在）
 3. 提交并推送 `main`，确认 CI 三个作业全绿
 4. 打 tag 并推送：
 
@@ -82,12 +84,17 @@ uv build                                 # 构建校验（wheel 内容守卫见 
    git push origin vX.Y.Z
    ```
 
-5. `.github/workflows/release.yml` 自动执行：校验 tag 与 `__version__` 一致、CHANGELOG 有该段 → 测试 + 静态检查 → 构建 wheel 并守卫其内容 → 上传私有索引（归档）→ 查门户 API 确认制品已入库 → 创建 GitHub Release（附 wheel / SHA256SUMS，**分发来源**）
+5. `.github/workflows/release.yml` 自动执行：校验 tag 与 `__version__` 一致、CHANGELOG 有该段 → 测试 + 静态检查 → 构建 wheel 并守卫其内容 → 以 Trusted Publishing 上传官方 PyPI → 查 PyPI JSON API 确认制品已入库。**到此发版结束，没有 Release 作业。**
 
-**只发 wheel，不发 sdist**：本包是纯 Python，wheel 通用；sdist 对插件开发者没有额外价值，却要多维护一份产物、多跑一次隔离构建。`uv build --wheel` 只出 wheel，索引与 Release 也只收 wheel。
+**只发 wheel，不发 sdist**：本包是纯 Python，wheel 通用；sdist 对插件开发者没有额外价值，却要多维护一份产物、多跑一次隔离构建。`uv build --wheel` 只出 wheel，PyPI 也只收这一份产物；`SHA256SUMS` 仅作构建记录留在 artifact 里，不上传。
 
-**前置条件**：仓库需配置 secret `QINGCI_PYPI_TOKEN`（索引上传令牌）。
+**前置条件（一次性配置，无需任何 secret）**：
+1. PyPI 账号（站点强制 2FA，需准备恢复码）；
+2. 项目首次发布前在 <https://pypi.org/manage/account/publishing/> 添加 **pending publisher**（它会在首次上传时自动创建项目并转为正式 publisher）；项目已存在后则在其 Settings → Publishing 添加普通 publisher。字段固定为：项目名 `qingci-plugin-sdk`、owner `Qingci-Bot`、仓库 `Plugins-SDK`、workflow `release.yml`、environment `pypi`；
+3. GitHub 仓库 Settings → Environments 建好名为 `pypi` 的环境（workflow 与 publisher 三处必须一致）。
 
-**为什么要有前置校验**：索引协议不允许同版本覆盖，wheel 一旦传错只能发新版本。因此「tag 与版本号不一致」「CHANGELOG 漏写」都在上传前拦截，而不是传完才发现。
+流水线用 `uv publish --trusted-publishing always` 走 OIDC 换取短期令牌，仓库不再保存 `QINGCI_PYPI_TOKEN` 之类的长期上传凭据。
 
-**主项目同步**：把 `pyproject.toml` 里 SDK 直链 URL 的 tag 与文件名两处版本号一起改成新版本，再重跑 `uv lock`（详见主项目 CONTRIBUTING）。主项目 CI 会断言两处版本一致、且与已安装版本相符。
+**为什么要有前置校验**：PyPI 不允许覆盖同版本，wheel 一旦传错只能发新版本。因此「tag 与版本号不一致」「CHANGELOG 漏写」都在上传前拦截，而不是传完才发现。
+
+**主项目同步**：主项目 `Qingci-Bot-CE` 目前仍以 GitHub Release 直链 URL + SHA256 锁定 v1.15.1。首版 PyPI 发布成功后，把它的依赖声明改为 PyPI 版本约束（`qingci-plugin-sdk==X.Y.Z`）并重跑 `uv lock`；此后每次发版只需升级该约束。切换完成前不要删历史 Release。

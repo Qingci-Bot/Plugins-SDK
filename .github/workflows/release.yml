@@ -1,15 +1,23 @@
 name: Release
 
-# 打 tag 即发版：校验 → 测试 → 构建 → 上传私有索引 → 建 GitHub Release。
-# 此前全手工（build → 手动传 wheel → 手动发 Release），而索引不允许覆盖同版本，
+# 打 tag 即发版：校验 → 测试 → 构建 → 上传官方 PyPI。
+# 分发渠道只有 PyPI：不再上传私有索引，也不再往 GitHub Release 挂产物。
+# 此前全手工（build → 手动传 wheel → 手动发 Release），而 PyPI 不允许覆盖同版本，
 # 一旦传错只能发新版本，故加自动化与前置校验。
+#
+# 认证走 PyPI Trusted Publishing（OIDC）：仓库不保存任何长期 API token。
+# PyPI 侧需配置 publisher（项目尚未创建时用 pending publisher），字段必须与本文件一致：
+#   项目名 qingci-plugin-sdk / owner Qingci-Bot / 仓库 Plugins-SDK
+#   workflow release.yml / environment pypi
+# 详见 docs/CODING_STANDARDS.md §6。
 
 on:
   push:
     tags: ["v*"]
 
+# 只读检出即可：发布不再创建 GitHub Release，写权限只留给各作业按需申请
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -20,13 +28,12 @@ env:
   # （UV_FROZEN 与 --locked 互斥，同时出现会直接报参数冲突）
   #
   # 分发只走 wheel：sdist 对插件开发者没有价值（本包是纯 Python，wheel 通用），
-  # 却会在索引里多一份需要维护的产物，且构建 sdist 会触发一次额外的隔离构建。
-  # 因此 uv build 只出 wheel，索引与 GitHub Release 也都只传 wheel。
+  # 却会在 PyPI 上多一份需要维护的产物，且构建 sdist 会触发一次额外的隔离构建。
+  # 因此 uv build 只出 wheel，PyPI 也只收这一份产物。
   #
-  # 上传仍是 Twine 协议的 legacy 端点（后台域名，与门户域名分开）：
-  #   门户/API  https://pypi.luoqingciya.cn/       （/api/v1/packages 等只读接口）
-  #   上传      https://admin.pypi.luoqingciya.cn/legacy/
-  PYPI_PUBLISH_URL: https://admin.pypi.luoqingciya.cn/legacy/
+  # 不指定 --publish-url：uv publish 默认即官方 PyPI（https://upload.pypi.org/legacy/）。
+  # 下面的项目名仅供上传后的入库校验使用。
+  PYPI_PROJECT: qingci-plugin-sdk
 
 jobs:
   verify:
@@ -117,6 +124,7 @@ jobs:
           PY
 
       - name: Checksums
+        # 仅作构建记录随 artifact 留存，供人工核对；不再挂到任何 Release，也不上传 PyPI
         run: cd dist && sha256sum *.whl > SHA256SUMS && cat SHA256SUMS
 
       - uses: actions/upload-artifact@v7
@@ -127,12 +135,16 @@ jobs:
             dist/SHA256SUMS
 
   publish:
-    name: Publish to private index
+    name: Publish to PyPI
     needs: build
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+    permissions:
+      # Trusted Publishing 只需要 OIDC；build 作业不共享该权限，缩小供应链攻击面
+      id-token: write
     steps:
-      - uses: actions/checkout@v7
-
+      # 不 checkout：本作业只消费构建产物，不接触仓库代码
       - uses: actions/download-artifact@v8
         with:
           name: dist
@@ -144,44 +156,27 @@ jobs:
           version: "0.12.3"
 
       - name: Publish
-        # 索引协议不允许同版本覆盖：重复上传会失败，这是有意的保护
-        env:
-          UV_PUBLISH_TOKEN: ${{ secrets.QINGCI_PYPI_TOKEN }}
-        run: |
-          if [ -z "$UV_PUBLISH_TOKEN" ]; then
-            echo "::error::缺少仓库 secret QINGCI_PYPI_TOKEN（私有索引上传令牌）"
-            echo "在 Settings → Secrets and variables → Actions 中添加后重跑本作业"
-            exit 1
-          fi
-          # Twine 协议：用户名任意（--token 会以 __token__ 作为用户名），密码为令牌。
-          # 令牌在仓库 secret QINGCI_PYPI_TOKEN 中，作用域限定 qingci_plugin_sdk 文件夹。
-          # 只传 wheel（sdist 不参与分发）。
-          uv publish --publish-url "$PYPI_PUBLISH_URL" --token "$UV_PUBLISH_TOKEN" dist/*.whl
+        # always：强制走 OIDC，禁止回退到任何 UV_PUBLISH_TOKEN（仓库不再有上传 secret）。
+        # PyPI 不允许覆盖同版本：重复上传会失败，这是有意的保护。
+        # 只传 wheel（sdist 不参与分发）；SHA256SUMS 不上传 PyPI。
+        run: uv publish --trusted-publishing always dist/*.whl
 
-      - name: Verify it landed in the index
-        # 上传返回 2xx 不等于制品已入库（新仓库按文件夹归档，写盘与索引可能不同步）。
-        # 直接查门户 API 确认版本与 wheel 文件名，避免「tag 发了、Release 也建了，
-        # 但下游装不到」——索引不允许覆盖同版本，这种错误只能发新版本才能修。
-        env:
-          TOKEN: ${{ secrets.QINGCI_PYPI_TOKEN }}
+      - name: Verify it landed on PyPI
+        # 上传返回 2xx 不等于制品已可安装（PyPI 入库与 CDN 有短暂延迟）。
+        # 查公开 JSON API 确认版本与 wheel 文件名，避免「tag 发了、上传也返回成功了，
+        # 但下游装不到」——PyPI 不允许覆盖同版本，这种错误只能发新版本才能修。
         run: |
           python3 - "$GITHUB_REF_NAME" <<'PY'
           import json, os, sys, time, urllib.error, urllib.request
 
-          tag = sys.argv[1].lstrip("v")
-          url = "https://pypi.luoqingciya.cn/api/v1/packages/qingci-plugin-sdk"
-          req = urllib.request.Request(
-              url, headers={"Authorization": f"Bearer {os.environ['TOKEN']}"}
-          )
+          version = sys.argv[1].lstrip("v")
+          url = f"https://pypi.org/pypi/{os.environ['PYPI_PROJECT']}/{version}/json"
 
           for attempt in range(1, 6):
               try:
-                  with urllib.request.urlopen(req, timeout=20) as resp:
+                  with urllib.request.urlopen(url, timeout=20) as resp:
                       data = json.load(resp)
               except urllib.error.HTTPError as e:
-                  if e.code in (401, 403):
-                      print(f"::warning::令牌无读取权限（HTTP {e.code}），跳过入库校验")
-                      sys.exit(0)
                   print(f"第 {attempt} 次查询失败：HTTP {e.code}")
                   time.sleep(5)
                   continue
@@ -190,50 +185,16 @@ jobs:
                   time.sleep(5)
                   continue
 
-              if tag in data.get("versions", []):
-                  files = [f["filename"] for f in data.get("files", []) if f.get("version") == tag]
-                  assert any(n.endswith(".whl") for n in files), f"{tag} 没有 wheel：{files}"
-                  print(f"索引已收录 {tag}：{files}")
+              wheels = [f["filename"] for f in data.get("urls", [])
+                        if f.get("filename", "").endswith(".whl")]
+              if data.get("info", {}).get("version") == version and wheels:
+                  print(f"PyPI 已收录 {version}：{wheels}")
                   sys.exit(0)
-              print(f"第 {attempt} 次未查到 {tag}，5 秒后重试")
+              print(f"第 {attempt} 次未查到 {version} 的 wheel，5 秒后重试")
               time.sleep(5)
 
-          sys.exit(f"上传后未在索引中查到 {tag}（制品可能落在错误的文件夹）")
+          sys.exit(f"上传后 PyPI 未查到 {version} 的 wheel")
           PY
 
-  release:
-    name: GitHub Release
-    needs: publish
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-
-      - uses: actions/download-artifact@v8
-        with:
-          name: dist
-          path: dist
-
-      - name: Extract release notes from CHANGELOG
-        run: |
-          ver="${GITHUB_REF_NAME#v}"
-          awk -v v="$ver" '
-            index($0, "## [" v "]") == 1 {flag=1; next}
-            flag && substr($0, 1, 4) == "## [" {exit}
-            flag {print}
-          ' CHANGELOG.md > notes.md
-          if [ ! -s notes.md ]; then
-            echo "未从 CHANGELOG 提取到内容，回退为自动生成"
-            rm -f notes.md
-          fi
-
-      - name: Create release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          # 只挂 wheel 与校验和；sdist 不参与分发
-          assets=(dist/*.whl dist/SHA256SUMS)
-          if [ -f notes.md ]; then
-            gh release create "$GITHUB_REF_NAME" "${assets[@]}" --title "$GITHUB_REF_NAME" --notes-file notes.md
-          else
-            gh release create "$GITHUB_REF_NAME" "${assets[@]}" --title "$GITHUB_REF_NAME" --generate-notes
-          fi
+# 不设 GitHub Release 作业：分发渠道只有 PyPI，产物不再挂到 Release。
+# 历史 Release（v1.15.1 及以前）保留，供主项目 Qingci-Bot-CE 的旧直链依赖继续解析。
