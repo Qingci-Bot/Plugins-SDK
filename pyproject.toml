@@ -5,7 +5,7 @@ description = "Qingci-Bot 插件 SDK — 独立可安装的插件开发工具包
 readme = "README.md"
 requires-python = ">=3.10"
 license = "GPL-3.0-or-later"
-license-files = ["LICENSE"]
+license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "luoqingci", email = "luoqingci@luoqingciya.com.cn" }]
 keywords = ["onebot", "onebot12", "qqbot", "chatbot", "plugin", "sdk"]
 classifiers = [

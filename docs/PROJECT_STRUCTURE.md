@@ -48,7 +48,8 @@ Plugins-SDK/
 ├── CONTRIBUTING.md           # 贡献指南（环境搭建、提交前检查、改动约定）
 ├── SECURITY.md               # 安全策略（私密报告渠道、威胁模型与有意为之的边界）
 ├── CHANGELOG.md              # 变更记录
-├── LICENSE                   # GPL-3.0
+├── LICENSE                   # GPL-3.0 官方全文（仅占位符填项目名/版权人）
+├── NOTICE                    # 版权人声明与组织授权（本仓库无 §7 附加条款）
 ├── uv.lock                   # uv 依赖锁（CI 用 UV_FROZEN=1、发版用 --locked 校验；只允许官方 PyPI 来源）
 ├── .pre-commit-config.yaml   # 本地提交钩子（ruff / 格式 / 文件规整，可选启用）
 └── .gitignore                # 产物忽略规则

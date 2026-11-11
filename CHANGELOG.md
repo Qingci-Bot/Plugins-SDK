@@ -14,6 +14,9 @@ SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`h
 
 ### 文档
 
+- **LICENSE 恢复为 GPLv3 官方全文**：从 FSF 官方 `gpl-3.0.txt` 重建（674 行），仅替换 3 行示例占位符；此前追加在末尾的组织授权声明搬入新建的 `NOTICE`（首行 `Copyright (C) 2026 Zhou Zhe (luoqingci)`）
+- 33 个源码头、README / CONTRIBUTING / 结构文档与 `license_headers.py` 的判断依据统改指向 NOTICE；`license-files = ["LICENSE", "NOTICE"]` 确保 NOTICE 随 wheel 分发。本仓库 NOTICE 不含 §7 附加条款（仍为纯 GPLv3），故脚本不再生成第三行头部
+
 - 全仓文档校对：统一「仅 PyPI 分发 / Trusted Publishing / 1.15.2」的现状表述，删除残留的私有索引与 GitHub Release 分发说明
 - `README.md` 补充从 PyPI 安装 SDK 的方式与完整文档导航；`PROJECT_STRUCTURE.md` 修正 `release.yml` 职责描述
 - `CODING_STANDARDS.md` / `CONTRIBUTING.md` 补全 PR 合并与 7 项必需状态检查、开发依赖清单、锁文件来源注意、ruff 版本说明
