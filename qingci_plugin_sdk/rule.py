@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """规则系统 — 插件 SDK 独立版本
 
 支持规则组合（AND/OR/NOT），内置常用规则。

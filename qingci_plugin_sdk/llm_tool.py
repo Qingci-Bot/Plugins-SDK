@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """插件级 LLM 工具声明（Function Calling）— 插件 SDK 独立版本
 
 允许插件用装饰器直接注册 Function Calling 工具，构建「LLM 原生插件」生态。

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """RateLimiter 用户级限流器测试
 
 跨协议一致性：事件链中 user_id 统一为 str，限流器按 str 键存储，

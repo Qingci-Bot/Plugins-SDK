@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """用户级限流器 — 插件 SDK 独立版本"""
 
 import time

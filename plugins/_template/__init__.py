@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Qingci-Bot 插件开发模板（完整版）
 
 将 plugins/_template/ 目录复制为 plugins/your_plugin/ 即可开始开发。

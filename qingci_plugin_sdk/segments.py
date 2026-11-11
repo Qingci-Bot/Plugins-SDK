@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """消息段抽象 — OneBot 12 标准消息段模型（插件 SDK 独立版本）
 
 OneBot 12 的消息段统一为 {type, data} 对象数组，媒体参数统一使用

@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """权限系统测试 — Permission 组合、内置权限、describe_permission"""
 
 from __future__ import annotations

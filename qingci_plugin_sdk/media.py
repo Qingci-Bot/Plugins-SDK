@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """媒体资源解析 — 把平台图片引用换成模型可读取的地址
 
 各平台下发的图片引用通常是不透明 ID（OneBot 12 的 `file_id`、Telegram 的

@@ -1531,3 +1531,5 @@ A: 取决于 `block` 参数。`block=True`（默认）的匹配器匹配后，�
 [GPL-3.0-or-later](LICENSE)。
 
 > 本仓库（Plugins-SDK）为纯 GPLv3 许可；主项目 [Qingci-Bot-CE](https://github.com/Qingci-Bot/Qingci-Bot-CE) 另依 GPLv3 第 7 条在其 LICENSE 中添加了附加条款（保留声明 / 修改版须改名 / 不得暗示背书），分发主项目时以主项目 LICENSE 为准。
+>
+> 所有源码文件均带 `Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors` 与 `SPDX-License-Identifier: GPL-3.0-or-later` 声明，由 `scripts/license_headers.py --check` 在 CI 中校验；新增源码文件请运行 `--fix` 补齐。
