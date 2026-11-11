@@ -2,7 +2,7 @@
 
 > **代码托管**：本项目以 [GitHub](https://github.com/Qingci-Bot/Plugins-SDK) 为唯一仓库；贡献与提 PR 一律以 GitHub 为准。
 
-> 本项目底层核心代码由 [**Zhou Zhe (aka luoqingci)**](https://github.com/luoqingciya) 原创，并授予 [Qingci-Bot](https://github.com/Qingci-Bot) 组织持续开发。
+> **版权与授权**：本仓库（与 [Qingci-Bot-CE](https://github.com/Qingci-Bot/Qingci-Bot-CE)）原为 **[Zhou Zhe (aka luoqingci)](https://github.com/luoqingciya)** 的个人项目，版权完整、排他地归其个人所有；[Qingci-Bot](https://github.com/Qingci-Bot) 组织获永久、不可撤销的 GPLv3 使用 / 修改 / 分发许可及维权授权，负责持续维护，**不是共同版权人**。完整授权文本见 [LICENSE](./LICENSE) 末尾。
 
 > 零基础也能看懂的插件开发指南。读完这篇文档，你就能写出自己的 QQ 机器人插件。
 
@@ -1532,4 +1532,4 @@ A: 取决于 `block` 参数。`block=True`（默认）的匹配器匹配后，�
 
 > 本仓库（Plugins-SDK）为纯 GPLv3 许可；主项目 [Qingci-Bot-CE](https://github.com/Qingci-Bot/Qingci-Bot-CE) 另依 GPLv3 第 7 条在其 LICENSE 中添加了附加条款（保留声明 / 修改版须改名 / 不得暗示背书），分发主项目时以主项目 LICENSE 为准。
 >
-> 所有源码文件均带 `Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors` 与 `SPDX-License-Identifier: GPL-3.0-or-later` 声明，由 `scripts/license_headers.py --check` 在 CI 中校验；新增源码文件请运行 `--fix` 补齐。
+> 所有源码文件均带 `Copyright (C) 2026 Zhou Zhe (aka luoqingci)` 与 `SPDX-License-Identifier: GPL-3.0-or-later` 声明，由 `scripts/license_headers.py --check` 在 CI 中校验；新增源码文件请运行 `--fix` 补齐。

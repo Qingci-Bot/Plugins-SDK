@@ -21,6 +21,7 @@ SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`h
 - 补齐 `CHANGELOG.md` 中 1.15.2 → 1.8.0 各版本的链接定义（1.15.2 指向 PyPI，其余指向对应 Release），移除 6 个指向不存在 tag 的早期死链
 - 同步主项目状态：CE 自 1.19.1 起已从官方 PyPI 安装 SDK，删除「主项目仍锁定 GitHub Release 直链 / 切换待办」等过时表述；许可章节补充主项目 GPLv3 第 7 条附加条款说明（本仓库仍为纯 GPLv3）
 - **源码版权声明**：为全部 32 个源码文件补齐 `Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors` 与 `SPDX-License-Identifier: GPL-3.0-or-later`；本仓库 LICENSE 为纯 GPLv3，故不带主项目那种 §7 附加行。新增 `scripts/license_headers.py`（`--check` / `--fix`）与 `tests/test_license_headers.py` 防遗漏
+- **版权归属厘清（重要）**：本仓库与 Qingci-Bot-CE 原为个人项目、后转入 Qingci-Bot 组织维护，版权完整归 Zhou Zhe (aka luoqingci) 个人所有，组织不是共同版权人。源码头去掉「and Qingci-Bot contributors」；修正 LICENSE 里 GPLv3 示例模板把组织列为版权人的双版权表述；LICENSE 末尾追加中英双语的「永久、不可撤销 GPLv3 许可 + 以组织名义维权」书面授权（不转移版权、不影响 GPLv3 第 10 条下游自动许可、贡献者保留各自贡献版权）。README / CONTRIBUTING 同步说明；`license_headers.py` 支持旧版权行安全迁移
 
 ## [1.15.2] - 2026-11-11（发布渠道切换到 PyPI）
 

@@ -100,3 +100,8 @@ python scripts/license_headers.py --check   # 检查；CI 由 tests/test_license
 ```
 
 脚本自动读取本仓库 LICENSE 判断是否含 GPLv3 §7 附加条款，因此与主项目共用同一份实现。
+
+**版权归属**：本仓库与 Qingci-Bot-CE 原为 Zhou Zhe (aka luoqingci) 的个人项目，后转入
+Qingci-Bot 组织维护；版权完整归个人所有，组织不是共同版权人（组织持有永久、不可撤销的
+GPLv3 许可与维权授权，见 LICENSE 末尾）。源码头因此只写个人姓名；贡献者保留各自贡献的
+版权，提交贡献即表示同意按 GPLv3 发布。
