@@ -1,0 +1,49 @@
+Copyright (C) 2026 Zhou Zhe (luoqingci)
+
+Plugins-SDK — additional notices
+==========================================
+
+LICENSE is a verbatim copy of the official GNU General Public License,
+version 3 (29 June 2007) text from <https://www.gnu.org/licenses/gpl-3.0.txt>.
+Only the three placeholder lines in the "How to Apply These Terms"
+section have been filled in with this project's name and copyright holder;
+no other part of the license text has been added, removed or altered.
+
+This file carries the project-specific notices that are NOT part of the
+GPLv3 text: the additional terms permitted by GPLv3 Section 7 (Qingci-Bot CE
+only), and the copyright holder's authorization to the Qingci-Bot organization.
+They apply to the Program as a whole and travel with every source copy.
+
+COPYRIGHT HOLDER AND ORGANIZATION AUTHORIZATION
+==============================================
+
+Plugins-SDK was originally created by Zhou Zhe (aka luoqingci) as a
+personal project and is now maintained under the Qingci-Bot GitHub
+organization. The copyright in the Program is held exclusively by
+Zhou Zhe (aka luoqingci); the Qingci-Bot organization is not a
+co-owner of the copyright.
+
+The copyright holder grants the Qingci-Bot organization a perpetual,
+irrevocable, worldwide, non-exclusive, royalty-free license to use,
+reproduce, modify, distribute and convey the Program and derivative
+works under the GNU General Public License, version 3 or (at its
+option) any later version, and to maintain, develop and release the
+Program under the organization's repositories.
+
+The copyright holder further authorizes the Qingci-Bot organization to
+enforce the GNU GPL with respect to the Program, including acting in
+its own name against infringement, and to take the steps reasonably
+necessary for that enforcement. This authorization does not transfer
+copyright ownership, and it does not limit the automatic licenses that
+GPLv3 Section 10 grants to downstream recipients.
+
+Contributions submitted to the project are made available under the
+same GPLv3 terms; contributors retain the copyright in their own
+contributions.
+
+中文摘要（仅作说明，解释不一致时以上述英文为准）：
+  本程序原为 Zhou Zhe (aka luoqingci) 的个人项目，现由 Qingci-Bot 组织维护。
+  版权完整、排他地归其个人所有，组织不是共同版权人。版权人授予该组织永久、
+  不可撤销、全球、非独占、免版税的 GPLv3 使用 / 修改 / 分发许可，并授权其以
+  自己名义对侵权行为发起维权；该授权不转移版权，也不影响 GPLv3 第 10 条给予
+  下游接收者的自动许可。贡献按同一 GPLv3 条款提供，贡献者保留各自贡献的版权。
