@@ -6,7 +6,7 @@
 
 `Plugins-SDK` 是 `Qingci-Bot` 根目录下的**多个独立子项目之一**，与 `Qingci-Bot-CE`、`Plugin-Market` 平级。它的定位是：
 
-- **独立可安装的插件开发工具包**：打包为 `qingci-plugin-sdk`（源码目录 `qingci_plugin_sdk/`），供插件开发者 `pip/uv install -e .` 后直接使用。
+- **独立可安装的插件开发工具包**：打包为 `qingci-plugin-sdk`（源码目录 `qingci_plugin_sdk/`），自 1.15.2 起经 [PyPI](https://pypi.org/project/qingci-plugin-sdk/) 分发（`uv add qingci-plugin-sdk` / `pip install qingci-plugin-sdk`）；在本仓库内改 SDK 源码时用 `pip/uv install -e .` 可编辑安装。
 - **插件协议层的唯一来源**：`PluginBase`/`Matcher`/`Permission`/`Rule`/`MessageContext`/`RateLimiter` 等协议定义在本仓库维护，主项目 `Qingci-Bot-CE` 的 `bot/plugin/protocol/` 为薄转发（`bot/plugin/` 顶层同名文件为兼容再导出），修改协议只需改这里。
 - **插件的开发与验证环境**：`plugins/` 下内置 `_template`（完整模板），开发者复制模板即可开始写插件；最小示例见独立仓库 [Qingci-Bot/hello](https://github.com/Qingci-Bot/hello)。
 - **不依赖主项目**：SDK 自带 `MessageContext`、`Rule`、`Permission` 等定义，插件开发期无需主项目即可 import 与冒烟测试。
@@ -40,7 +40,7 @@ Plugins-SDK/
 ├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
 ├── .github/
 │   ├── workflows/ci.yml      # 测试矩阵（3.10–3.14）/ lint / 构建冒烟
-│   ├── workflows/release.yml # 打 tag 即发版：校验 → 测试 → 构建 → 上传索引 → Release
+│   ├── workflows/release.yml # 打 tag 即发版：校验 → 测试 → 构建 → Trusted Publishing 上传 PyPI（无 Release 作业）
 │   └── dependabot.yml        # 开发依赖与 action 的每周自动更新（分组提 PR）
 ├── pyproject.toml            # 包元数据（版本取自 __version__）、构建配置、ruff/mypy/coverage 配置
 ├── README.md                 # 插件开发指南（面向插件作者）
@@ -48,7 +48,7 @@ Plugins-SDK/
 ├── SECURITY.md               # 安全策略（私密报告渠道、威胁模型与有意为之的边界）
 ├── CHANGELOG.md              # 变更记录
 ├── LICENSE                   # GPL-3.0
-├── uv.lock                   # uv 依赖锁（CI 以 UV_FROZEN=1 严格安装）
+├── uv.lock                   # uv 依赖锁（CI 用 UV_FROZEN=1、发版用 --locked 校验；只允许官方 PyPI 来源）
 ├── .pre-commit-config.yaml   # 本地提交钩子（ruff / 格式 / 文件规整，可选启用）
 └── .gitignore                # 产物忽略规则
 ```
@@ -65,7 +65,8 @@ Plugins-SDK/
 **依赖方向（强制）：**
 
 ```
-qingci_plugin_sdk/  ──(pip install -e .)──▶  插件（plugins/ 或用户自己的目录）
+qingci_plugin_sdk/  ──(PyPI: uv add / pip install qingci-plugin-sdk)──▶  插件（任意目录）
+                    ──(本仓库: pip/uv install -e .)──────────────────▶  本地开发/验证环境
 ```
 
 - `qingci_plugin_sdk/` 内部模块**彼此独立可复用**，但不得反向依赖 `plugins/` 下的示例。
