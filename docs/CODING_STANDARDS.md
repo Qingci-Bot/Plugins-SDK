@@ -74,7 +74,7 @@ uv build                                 # 构建 sdist + wheel；CI 的 Build /
 
 ## 6. 发版流程
 
-**分发渠道只有官方 PyPI**（`https://pypi.org/project/qingci-plugin-sdk/`）：不再上传私有索引，也不再创建 GitHub Release / 挂 wheel。首版 1.15.2 已于 2026-11-11 发布；历史 Release（v1.15.1 及以前）保留，仅供主项目旧直链依赖继续解析。
+**分发渠道只有官方 PyPI**（`https://pypi.org/project/qingci-plugin-sdk/`）：不再上传私有索引，也不再创建 GitHub Release / 挂 wheel。首版 1.15.2 已于 2026-11-11 发布；历史 Release（v1.15.1 及以前）仅作归档保留，主项目 `Qingci-Bot-CE` 自 1.19.1 起已从官方 PyPI 安装本 SDK。
 
 1. 改 `qingci_plugin_sdk/__init__.py` 的 `__version__`——**唯一版本来源**，`pyproject.toml` 动态读取，不要另改
 2. 在 `CHANGELOG.md` 写 `## [X.Y.Z] - YYYY-MM-DD` 段落（verify 作业会检查它存在）
@@ -99,4 +99,4 @@ uv build                                 # 构建 sdist + wheel；CI 的 Build /
 
 **为什么要有前置校验**：PyPI 不允许覆盖同版本，wheel 一旦传错只能发新版本。因此「tag 与版本号不一致」「CHANGELOG 漏写」都在上传前拦截，而不是传完才发现。
 
-**主项目同步（待办）**：主项目 `Qingci-Bot-CE` 目前仍以 GitHub Release 直链 URL + SHA256 锁定 v1.15.1。PyPI 已有 1.15.2，需把它的依赖声明改为 PyPI 版本约束（`qingci-plugin-sdk==X.Y.Z`）并重跑 `uv lock`；此后每次发版只需升级该约束。切换完成前不要删历史 Release。
+**主项目同步**：主项目 `Qingci-Bot-CE` 自 1.19.1 起已在 `pyproject.toml` 中以 PyPI 版本约束（`qingci-plugin-sdk==X.Y.Z`）依赖本 SDK，`uv.lock` 同步锁定。SDK 发新版后在主项目升级该约束并重跑 `uv lock`；历史 Release 仅作归档保留，CE 的 CI 会校验钉定版本、锁文件与已安装版本一致。
