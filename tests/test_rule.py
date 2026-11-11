@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """规则系统测试 — Rule 组合、内置规则工厂、keyword 词边界优化"""
 
 from __future__ import annotations

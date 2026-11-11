@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """@llm_tool 声明与收集器测试
 
 此前该模块只有间接覆盖。重点验证两件事：

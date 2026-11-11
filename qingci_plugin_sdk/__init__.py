@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """Qingci-Bot 插件 SDK — 独立可安装的插件开发工具包
 
 使用方式:

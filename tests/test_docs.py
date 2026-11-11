@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """文档一致性测试 — README 代码块必须可解析、导入的符号必须真实存在
 
 文档里的示例是用户复制的第一份代码，比源码更容易过时：

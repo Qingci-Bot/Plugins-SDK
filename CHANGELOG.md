@@ -20,6 +20,7 @@ SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`h
 - `SECURITY.md` 补全供应链与开发依赖描述
 - 补齐 `CHANGELOG.md` 中 1.15.2 → 1.8.0 各版本的链接定义（1.15.2 指向 PyPI，其余指向对应 Release），移除 6 个指向不存在 tag 的早期死链
 - 同步主项目状态：CE 自 1.19.1 起已从官方 PyPI 安装 SDK，删除「主项目仍锁定 GitHub Release 直链 / 切换待办」等过时表述；许可章节补充主项目 GPLv3 第 7 条附加条款说明（本仓库仍为纯 GPLv3）
+- **源码版权声明**：为全部 32 个源码文件补齐 `Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors` 与 `SPDX-License-Identifier: GPL-3.0-or-later`；本仓库 LICENSE 为纯 GPLv3，故不带主项目那种 §7 附加行。新增 `scripts/license_headers.py`（`--check` / `--fix`）与 `tests/test_license_headers.py` 防遗漏
 
 ## [1.15.2] - 2026-11-11（发布渠道切换到 PyPI）
 

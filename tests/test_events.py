@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """v11 -> v12 事件翻译（translate_v11_event）测试
 
 覆盖：message（含 CQ 码解析）/ notice（group_admin、group_ban 按

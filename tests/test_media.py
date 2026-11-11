@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """媒体解析测试 — file_id → 模型可读取地址
 
 覆盖三类输入：已可直接使用的（URL / data URI）、本地/内联的（文件、base64）、

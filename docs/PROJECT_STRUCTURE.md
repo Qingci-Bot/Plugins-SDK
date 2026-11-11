@@ -37,6 +37,7 @@ Plugins-SDK/
 │   ├── __init__.py           # 包标记
 │   └── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
 ├── tests/                    # SDK 单元测试（pytest，不进入 wheel）
+├── scripts/                  # 维护脚本（license_headers.py：源码版权声明检查/补齐）
 ├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
 ├── .github/
 │   ├── workflows/ci.yml      # 测试矩阵（3.10–3.14）/ lint / 构建冒烟

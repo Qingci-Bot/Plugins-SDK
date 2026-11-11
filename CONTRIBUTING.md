@@ -88,3 +88,15 @@ gh pr merge --squash --delete-branch
 **主项目同步**：`Qingci-Bot-CE` 自 1.19.1 起已在 `pyproject.toml` 中以 PyPI 版本约束
 （`qingci-plugin-sdk==X.Y.Z`）依赖本 SDK，`uv.lock` 同步锁定。SDK 发新版后，在主项目升级该版本约束
 并重跑 `uv lock --default-index https://pypi.org/simple` 即可；历史 Release 仅作归档保留。
+
+## 源码版权声明
+
+所有 `.py` 源码文件开头都要有 Copyright 行与 `SPDX-License-Identifier`（本仓库为纯
+GPLv3，不需要主项目那种「§7 附加条款见 LICENSE」行）。统一用脚本处理：
+
+```bash
+python scripts/license_headers.py --fix     # 补齐缺失声明（幂等）
+python scripts/license_headers.py --check   # 检查；CI 由 tests/test_license_headers.py 调用，漏写即失败
+```
+
+脚本自动读取本仓库 LICENSE 判断是否含 GPLv3 §7 附加条款，因此与主项目共用同一份实现。

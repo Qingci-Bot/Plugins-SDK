@@ -1,3 +1,6 @@
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# SPDX-License-Identifier: GPL-3.0-or-later
+
 """轻量国际化（i18n）— 插件 SDK 独立版本
 
 提供零依赖的翻译查找与格式化，供插件声明多语言资源（与主项目
