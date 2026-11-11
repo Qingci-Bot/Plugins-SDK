@@ -47,7 +47,7 @@ SDK 运行在**宿主进程内**，与插件代码同权限。以下几点是有
 
 ## 供应链
 
-- SDK 自 1.15.2 起仅经 [官方 PyPI](https://pypi.org/project/qingci-plugin-sdk/) 分发；不再上传私有索引或向 GitHub Release 挂产物，历史 Release（v1.15.1 及以前）保留供主项目旧直链依赖继续解析
+- SDK 自 1.15.2 起仅经 [官方 PyPI](https://pypi.org/project/qingci-plugin-sdk/) 分发；不再上传私有索引或向 GitHub Release 挂产物，历史 Release（v1.15.1 及以前）仅作归档保留（主项目自 CE 1.19.1 起已从 PyPI 安装 SDK）
 - 首版 1.15.2 于 2026-11-11 由 pending publisher 自动创建项目并上传，该 publisher 已转为正式 publisher；发布走 Trusted Publishing（OIDC 短期令牌），仓库不保存长期 API token
 - 发布作业仅有 `id-token: write` 权限且不与构建作业共享；`uv publish --trusted-publishing always` 禁止回退到任何长期令牌
 - PyPI 不允许同版本覆盖；发布流水线在上传前校验 tag 与 `__version__` 一致、CHANGELOG 有对应段落，上传后查 PyPI JSON API 确认制品已入库

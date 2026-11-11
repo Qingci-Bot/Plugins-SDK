@@ -85,6 +85,6 @@ gh pr merge --squash --delete-branch
 维护者操作，流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6。
 打 `vX.Y.Z` tag 后流水线自动校验、测试、构建 wheel、以 Trusted Publishing 上传官方 PyPI 并校验入库；不再创建 GitHub Release。
 
-**主项目同步（待办）**：PyPI 已有 1.15.2，但 `Qingci-Bot-CE` 仍以 GitHub Release 直链 URL + SHA256
-锁定 v1.15.1。需把它的依赖声明改为 PyPI 版本约束（`qingci-plugin-sdk==X.Y.Z`）并重跑 `uv lock`；
-此后每次发版只需升级该约束。切换完成前历史 Release 保留不删，旧直链仍可解析。
+**主项目同步**：`Qingci-Bot-CE` 自 1.19.1 起已在 `pyproject.toml` 中以 PyPI 版本约束
+（`qingci-plugin-sdk==X.Y.Z`）依赖本 SDK，`uv.lock` 同步锁定。SDK 发新版后，在主项目升级该版本约束
+并重跑 `uv lock --default-index https://pypi.org/simple` 即可；历史 Release 仅作归档保留。

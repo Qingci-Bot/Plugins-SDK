@@ -4,8 +4,8 @@
 
 SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`https://pypi.org/project/qingci-plugin-sdk/`），
 由 Trusted Publishing（OIDC）上传；不再上传私有制品仓库，也不再创建 GitHub Release / 挂 wheel 与校验和。
-首版 1.15.2 已于 2026-11-11 发布。历史 Release（v1.15.1 及以前）保留，供主项目 `Qingci-Bot-CE`
-现有的直链 URL + SHA256 依赖继续解析；该依赖切换为 PyPI 版本约束时需重跑 `uv lock`。
+首版 1.15.2 已于 2026-11-11 发布。主项目 `Qingci-Bot-CE` 自 1.19.1 起已从官方 PyPI 安装
+本 SDK（`qingci-plugin-sdk==1.15.2`）；历史 Release（v1.15.1 及以前）仅作归档保留。
 
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6：打 `vX.Y.Z` tag 即自动
 校验、测试、构建 wheel、上传 PyPI 并校验入库。
@@ -19,6 +19,7 @@ SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`h
 - `CODING_STANDARDS.md` / `CONTRIBUTING.md` 补全 PR 合并与 7 项必需状态检查、开发依赖清单、锁文件来源注意、ruff 版本说明
 - `SECURITY.md` 补全供应链与开发依赖描述
 - 补齐 `CHANGELOG.md` 中 1.15.2 → 1.8.0 各版本的链接定义（1.15.2 指向 PyPI，其余指向对应 Release），移除 6 个指向不存在 tag 的早期死链
+- 同步主项目状态：CE 自 1.19.1 起已从官方 PyPI 安装 SDK，删除「主项目仍锁定 GitHub Release 直链 / 切换待办」等过时表述；许可章节补充主项目 GPLv3 第 7 条附加条款说明（本仓库仍为纯 GPLv3）
 
 ## [1.15.2] - 2026-11-11（发布渠道切换到 PyPI）
 
@@ -33,7 +34,7 @@ SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`h
 
 ### 注意
 
-主项目 `Qingci-Bot-CE` 仍锁定 GitHub Release 上的 v1.15.1 wheel。历史 Release 保留不删，待其依赖切换到 PyPI 后旧直链才停止使用。
+发布时主项目 `Qingci-Bot-CE` 仍锁定 GitHub Release 上的 v1.15.1 wheel；该依赖已在 CE 1.19.1 切换为 PyPI 版本约束（`qingci-plugin-sdk==1.15.2`）。历史 Release 保留作归档。
 
 ## [1.15.1] - 2026-10-24（文档与 docstring 修正）
 
