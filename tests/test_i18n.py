@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """I18n 国际化测试 — 翻译查找 / 占位符格式化 / 目录加载"""

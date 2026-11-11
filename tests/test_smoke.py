@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """Plugins-SDK 冒烟测试 — 验证核心导出与基础行为（零外部依赖）

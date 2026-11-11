@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """paths 测试 — 应用根定位与可写数据根覆盖"""

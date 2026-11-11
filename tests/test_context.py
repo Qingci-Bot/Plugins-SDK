@@ -1,4 +1,4 @@
-# Copyright (C) 2026 Zhou Zhe (aka luoqingci) and Qingci-Bot contributors
+# Copyright (C) 2026 Zhou Zhe (aka luoqingci)
 # SPDX-License-Identifier: GPL-3.0-or-later
 
 """MessageContext 测试 — from_v12_event 归一化与兼容视图"""
