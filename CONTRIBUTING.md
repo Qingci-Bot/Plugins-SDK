@@ -85,9 +85,11 @@ gh pr merge --squash --delete-branch
 维护者操作，流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6。
 打 `vX.Y.Z` tag 后流水线自动校验、测试、构建 wheel、以 Trusted Publishing 上传官方 PyPI 并校验入库；不再创建 GitHub Release。
 
-**主项目同步**：`Qingci-Bot-CE` 自 1.19.1 起已在 `pyproject.toml` 中以 PyPI 版本约束
-（`qingci-plugin-sdk==X.Y.Z`）依赖本 SDK，`uv.lock` 同步锁定。SDK 发新版后，在主项目升级该版本约束
-并重跑 `uv lock --default-index https://pypi.org/simple` 即可；历史 Release 仅作归档保留。
+**主项目同步**：`Qingci-Bot-CE` 已在 `pyproject.toml` 中以 PyPI 版本区间
+（`qingci-plugin-sdk>=1.15.2,<2.0.0`）依赖本 SDK，兼容性由 ABI 能力探测保证（CE 的
+`bot/plugin/abi.py` 符号清单 + 版本区间双检）。SDK 发新版后，在主项目按需放宽区间下限
+并重跑 `uv lock --default-index https://pypi.org/simple` 即可。GitHub Releases 已于
+2026-11-12 清理停用（历史发布说明见 [CHANGELOG.md](CHANGELOG.md)），PyPI 为唯一分发渠道。
 
 ## 源码版权声明
 
