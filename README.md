@@ -18,7 +18,7 @@
 - [贡献指南](CONTRIBUTING.md) — 开发环境、提交与 PR 流程
 - [安全策略](SECURITY.md) — 漏洞报告与供应链
 - [变更记录](CHANGELOG.md) — 版本历史
-- [PyPI 包页面](https://pypi.org/project/qingci-plugin-sdk/) — 已发布版本与 wheel
+- [PyPI 包页面](https://pypi.org/project/qingci-plugin-sdk/) — 已发布版本与 wheel（唯一分发渠道；GitHub Releases 已停用，发布说明见 CHANGELOG.md）
 
 ---
 
