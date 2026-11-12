@@ -4,13 +4,21 @@
 
 SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`https://pypi.org/project/qingci-plugin-sdk/`），
 由 Trusted Publishing（OIDC）上传；不再上传私有制品仓库，也不再创建 GitHub Release / 挂 wheel 与校验和。
-首版 1.15.2 已于 2026-11-11 发布。主项目 `Qingci-Bot-CE` 自 1.19.1 起已从官方 PyPI 安装
-本 SDK（`qingci-plugin-sdk==1.15.2`）；历史 Release（v1.15.1 及以前）仅作归档保留。
+首版 1.15.2 已于 2026-11-11 发布。主项目 `Qingci-Bot-CE` 自官方 PyPI 安装本 SDK
+（`qingci-plugin-sdk>=1.15.2,<2.0.0` 区间约束，兼容性由 ABI 能力探测保证）。历史
+GitHub Releases（v1.15.1 及以前）已于 2026-11-12 清理删除（git tag 保留），发布说明见本文件。
 
 发版流程见 [docs/CODING_STANDARDS.md](docs/CODING_STANDARDS.md) §6：打 `vX.Y.Z` tag 即自动
 校验、测试、构建 wheel、上传 PyPI 并校验入库。
 
 ## [Unreleased]
+
+### 文档
+
+- **README 门面化拆分**：README.md 1536 → 91 行，只留定位 / 文档导航 / 特性 / 5 分钟极简上手 / 许可；面向插件作者的长内容按职责拆入 docs/——`GETTING_STARTED.md`（环境准备、5 分钟跑通、第一个插件、项目结构）、`PLUGIN_GUIDE.md`（核心概念、命令管理、常见场景）、`API.md`（完整导入清单与核心 API 签名）、`PUBLISHING.md`（发布流程与排障 FAQ）
+- `tests/test_docs.py` 同步改为校验 README + docs/ 全部文档（代码块语法、导入符号存在性、`__all__` 导出可见性、导出项数），新增文档自动纳入
+- **CHANGELOG 版本链接修复**：GitHub Releases 清理后，1.15.1 及更早版本的链接从已失效的 release 页改为 tag 对比链接（`compare/vA...vB`）
+- `PROJECT_STRUCTURE.md` 文档树补齐新增文档；`CODING_STANDARDS.md` / `CONTRIBUTING.md` 的文档校验与同步说明改为覆盖全部文档
 
 ### 文档
 
@@ -340,28 +348,28 @@ SDK 独立版本演进。**自 1.15.2 起唯一分发渠道是官方 PyPI**（`h
 - 插件开发指南 `README.md` 与插件模板 `_template`。
 
 [1.15.2]: https://pypi.org/project/qingci-plugin-sdk/1.15.2/
-[1.15.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.15.1
-[1.15.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.15.0
-[1.14.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.14.0
-[1.13.9]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.9
-[1.13.8]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.8
-[1.13.7]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.7
-[1.13.6]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.6
-[1.13.5]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.5
-[1.13.4]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.4
-[1.13.3]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.3
-[1.13.2]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.2
-[1.13.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.1
-[1.13.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.13.0
-[1.12.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.12.0
-[1.11.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.11.0
-[1.10.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.10.1
-[1.10.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.10.0
-[1.9.4]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.4
-[1.9.3]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.3
-[1.9.2]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.2
-[1.9.1]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.1
-[1.9.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.9.0
-[1.8.0]: https://github.com/Qingci-Bot/Plugins-SDK/releases/tag/v1.8.0
+[1.15.1]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.15.0...v1.15.1
+[1.15.0]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.14.0...v1.15.0
+[1.14.0]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.9...v1.14.0
+[1.13.9]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.8...v1.13.9
+[1.13.8]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.7...v1.13.8
+[1.13.7]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.6...v1.13.7
+[1.13.6]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.5...v1.13.6
+[1.13.5]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.4...v1.13.5
+[1.13.4]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.3...v1.13.4
+[1.13.3]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.2...v1.13.3
+[1.13.2]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.1...v1.13.2
+[1.13.1]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.13.0...v1.13.1
+[1.13.0]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.12.0...v1.13.0
+[1.12.0]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.11.0...v1.12.0
+[1.11.0]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.10.1...v1.11.0
+[1.10.1]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.10.0...v1.10.1
+[1.10.0]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.9.4...v1.10.0
+[1.9.4]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.9.3...v1.9.4
+[1.9.3]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.9.2...v1.9.3
+[1.9.2]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.9.1...v1.9.2
+[1.9.1]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.9.0...v1.9.1
+[1.9.0]: https://github.com/Qingci-Bot/Plugins-SDK/compare/v1.8.0...v1.9.0
+[1.8.0]: https://github.com/Qingci-Bot/Plugins-SDK/tree/v1.8.0
 
 <!-- 1.6.0 及更早版本未打 tag、未建 Release，故不设链接定义。 -->

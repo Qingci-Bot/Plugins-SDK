@@ -64,12 +64,13 @@ uv build                                 # 构建 sdist + wheel；CI 的 Build /
 - CI 在 Python 3.10 / 3.11 / 3.12 / 3.13 / 3.14 上运行测试（`requires-python >= 3.10` 的完整声明区间），并校验 `uv.lock` 只含官方 PyPI 来源。
 - 新增公开符号必须同时补 `__all__` 与 `tests/test_smoke.py` 的导出面断言。
 - **当前锁定的 ruff（0.16.3）会把仓库内所有 Markdown 的 python 代码块一起格式化**，
-  因此示例必须写成合法 Python；`tests/test_docs.py` 还会校验代码块语法、导入符号是否存在、
-  每个包级导出是否至少在 README 中出现一次，以及 README 写死的 `__all__` 项数。
+  因此示例必须写成合法 Python；`tests/test_docs.py` 会校验 README 与 docs/ 全部文档的
+  代码块语法、导入符号是否存在、每个包级导出是否至少在文档中出现一次，
+  以及文档写死的 `__all__` 项数。
 - **`main` 是受保护分支（`enforce_admins`），不能直接 push**：改动必须走 PR，等 7 项必需状态检查
   （Lint / Type、Test py3.10–3.14、Build / Install smoke）全绿后合并，再打发版 tag。
 - 提交信息使用 [Conventional Commits](https://www.conventionalcommits.org/)：`feat:` / `fix:` / `docs:` / `refactor:` / `chore:`。
-- 大改动同步更新 `CHANGELOG.md`（未发版内容放 `[Unreleased]` 段，发版时归入 `## [X.Y.Z]`）与 `README.md`。
+- 大改动同步更新 `CHANGELOG.md`（未发版内容放 `[Unreleased]` 段，发版时归入 `## [X.Y.Z]`）；面向插件作者的内容进 README / docs/（GETTING_STARTED / PLUGIN_GUIDE / API / PUBLISHING）。
 - 不提交产物与缓存（见 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) 产物归属约定）。
 
 ## 6. 发版流程

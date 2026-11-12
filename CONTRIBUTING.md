@@ -49,8 +49,8 @@ uv run pre-commit install
 
 - **协议行为变更先在 SDK 落地**：`PluginBase` / `Matcher` / `Rule` / `Permission` 的唯一实现在本仓库，主项目 `bot/plugin/protocol/` 是薄转发。改协议不要动主项目副本。
 - **新增公开符号**：同时补 `qingci_plugin_sdk/__init__.py` 的 `__all__`、对应模块的 `__all__`，以及 `tests/test_smoke.py` 的导出面断言。
-- **改了 README 的代码块**：示例必须是合法 Python——当前锁定的 ruff（0.16.3）会格式化仓库内所有 Markdown 的 python 代码块，`tests/test_docs.py` 还会校验语法、导入符号与导出项数。
-- **大改动**：同步更新 `CHANGELOG.md`（未发版内容放 `[Unreleased]` 段）与 README。
+- **改了文档的代码块（README / docs/）**：示例必须是合法 Python——当前锁定的 ruff（0.16.3）会格式化仓库内所有 Markdown 的 python 代码块，`tests/test_docs.py` 还会校验语法、导入符号与导出项数。
+- **大改动**：同步更新 `CHANGELOG.md`（未发版内容放 `[Unreleased]` 段）与面向插件作者的文档（README / docs/）。
 
 ## 提交信息
 
