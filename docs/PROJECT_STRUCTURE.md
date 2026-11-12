@@ -38,13 +38,20 @@ Plugins-SDK/
 │   └── _template/            # 插件模板（_ 前缀 = 不参与加载，供复制）
 ├── tests/                    # SDK 单元测试（pytest，不进入 wheel）
 ├── scripts/                  # 维护脚本（license_headers.py：源码版权声明检查/补齐）
-├── docs/                     # 规范文档（本文档 + CODING_STANDARDS.md）
+├── docs/                     # 规范与开发文档（GETTING_STARTED / PLUGIN_GUIDE / API /
+│   │                         #   PUBLISHING + 本文档 + CODING_STANDARDS.md）
+│   ├── GETTING_STARTED.md    # 快速上手：环境准备、5 分钟跑通、第一个插件、项目结构
+│   ├── PLUGIN_GUIDE.md       # 插件开发指南：核心概念、命令管理、常见场景
+│   ├── API.md                # API 参考：完整导入清单与核心 API 签名
+│   ├── PUBLISHING.md         # 发布与常见问题：插件放进主项目、发布流程、排障 FAQ
+│   ├── CODING_STANDARDS.md   # 编码规范（本文档姊妹篇，见下）
+│   └── PROJECT_STRUCTURE.md  # 项目结构（本文件）
 ├── .github/
 │   ├── workflows/ci.yml      # 测试矩阵（3.10–3.14）/ lint / 构建冒烟
 │   ├── workflows/release.yml # 打 tag 即发版：校验 → 测试 → 构建 → Trusted Publishing 上传 PyPI（无 Release 作业）
 │   └── dependabot.yml        # 开发依赖与 action 的每周自动更新（分组提 PR）
 ├── pyproject.toml            # 包元数据（版本取自 __version__）、构建配置、ruff/mypy/coverage 配置
-├── README.md                 # 插件开发指南（面向插件作者）
+├── README.md                 # 门面：定位 / 文档导航 / 特性 / 5 分钟极简上手 / 许可
 ├── CONTRIBUTING.md           # 贡献指南（环境搭建、提交前检查、改动约定）
 ├── SECURITY.md               # 安全策略（私密报告渠道、威胁模型与有意为之的边界）
 ├── CHANGELOG.md              # 变更记录
